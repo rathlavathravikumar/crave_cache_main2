@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #F4F5F7;
+    color: #1F2937;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
+/* Custom Geometric Balance Theme Helpers */
+.bg-geometric-bg {
+  background-color: #F4F5F7;
+}
+
+.bg-brand-primary {
+  background-color: #FF5200;
+}
+
+.text-brand-primary {
+  color: #FF5200;
+}
+
+.border-brand-primary {
+  border-color: #FF5200;
+}
+
+.bg-brand-soft {
+  background-color: #FFF5F0;
+}
+
+.badge-green {
+  background-color: #ECFDF5;
+  color: #059669;
+}
+
+.ai-gradient-banner {
+  background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+}
+
