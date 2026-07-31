@@ -3,6 +3,7 @@ import { Sparkles, Compass, Clock, DollarSign, Heart, TrendingUp, Search, Refres
 import { RecommendationSection, FoodItem } from '../types';
 import { FoodCard } from './FoodCard';
 import { useAppSelector } from '../hooks/reduxHooks';
+import { apiFetch } from '../utils/apiBase';
 
 export const AIRecommendationEngine: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user);
@@ -24,7 +25,7 @@ export const AIRecommendationEngine: React.FC = () => {
     else setLoading(true);
 
     try {
-      const res = await fetch('/api/recommendations', {
+      const res = await apiFetch('/api/recommendations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

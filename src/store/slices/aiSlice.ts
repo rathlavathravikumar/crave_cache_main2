@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { FoodItem, Restaurant, Coupon } from '../../types';
+import { apiFetch } from '../../utils/apiBase';
 
 export interface AIMessage {
   id: string;
@@ -58,7 +59,7 @@ export const queryAIAssistant = createAsyncThunk(
   'ai/queryAIAssistant',
   async (userPrompt: string, { rejectWithValue }) => {
     try {
-      const res = await fetch('/api/ai/assistant', {
+      const res = await apiFetch('/api/ai/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: userPrompt }),

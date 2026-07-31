@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { CartItem, FoodItem, CartCustomizationSelection, Coupon } from '../../types';
+import { apiFetch } from '../../utils/apiBase';
 
 interface CartState {
   items: CartItem[];
@@ -43,7 +44,7 @@ export const applyCouponCode = createAsyncThunk(
   'cart/applyCouponCode',
   async ({ code, cartAmount }: { code: string; cartAmount: number }, { rejectWithValue }) => {
     try {
-      const res = await fetch('/api/coupons/validate', {
+      const res = await apiFetch('/api/coupons/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, cartAmount }),

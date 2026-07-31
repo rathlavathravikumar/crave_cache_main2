@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { Restaurant, FoodItem, Order, OrderStatus, Review } from '../types';
 import { useAppSelector } from '../hooks/reduxHooks';
+import { confirm } from '../components/ui';
+import { apiFetch } from '../utils/apiBase';
 
 export const OwnerPortalPage: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user);
@@ -88,11 +90,11 @@ export const OwnerPortalPage: React.FC = () => {
     const ownerId = user?.id || 'usr_owner_1';
     try {
       const [restRes, foodsRes, ordersRes, analyticsRes, notifRes] = await Promise.all([
-        fetch(`/api/owner/my-restaurant?ownerId=${ownerId}`),
-        fetch(`/api/owner/foods?ownerId=${ownerId}`),
-        fetch(`/api/owner/orders?ownerId=${ownerId}`),
-        fetch(`/api/owner/analytics?ownerId=${ownerId}`),
-        fetch(`/api/owner/notifications?ownerId=${ownerId}`),
+        apiFetch(`/api/owner/my-restaurant?ownerId=${ownerId}`),
+        apiFetch(`/api/owner/foods?ownerId=${ownerId}`),
+        apiFetch(`/api/owner/orders?ownerId=${ownerId}`),
+        apiFetch(`/api/owner/analytics?ownerId=${ownerId}`),
+        apiFetch(`/api/owner/notifications?ownerId=${ownerId}`),
       ]);
 
       const restData = await restRes.json();
@@ -139,7 +141,7 @@ export const OwnerPortalPage: React.FC = () => {
     if (!restaurant) return;
     const updatedStatus = !restaurant.isOpen;
     try {
-      const res = await fetch('/api/owner/my-restaurant', {
+      const res = await apiFetch('/api/owner/my-restaurant', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: restaurant.id, isOpen: updatedStatus }),
@@ -161,7 +163,7 @@ export const OwnerPortalPage: React.FC = () => {
     setSavingProfile(true);
     setSaveSuccessMsg(null);
     try {
-      const res = await fetch('/api/owner/my-restaurant', {
+      const res = await apiFetch('/api/owner/my-restaurant', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -220,7 +222,7 @@ export const OwnerPortalPage: React.FC = () => {
     if (!restaurant) return;
     try {
       if (editingFood) {
-        const res = await fetch(`/api/owner/foods/${editingFood.id}`, {
+        const res = await apiFetch(`/api/owner/foods/${editingFood.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(foodForm),
@@ -230,7 +232,7 @@ export const OwnerPortalPage: React.FC = () => {
           setFoods((prev) => prev.map((f) => (f.id === updatedFood.id ? updatedFood : f)));
         }
       } else {
-        const res = await fetch('/api/owner/foods', {
+        const res = await apiFetch('/api/owner/foods', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -251,9 +253,15 @@ export const OwnerPortalPage: React.FC = () => {
 
   // Delete Food Item
   const handleDeleteFood = async (foodId: string) => {
-    if (!window.confirm('Are you sure you want to delete this food item?')) return;
+    const ok = await confirm({
+      title: 'Remove this dish from your menu?',
+      description: 'It will stop appearing to customers straight away. This cannot be undone.',
+      confirmLabel: 'Remove dish',
+      tone: 'danger',
+    });
+    if (!ok) return;
     try {
-      const res = await fetch(`/api/owner/foods/${foodId}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/owner/foods/${foodId}`, { method: 'DELETE' });
       if (res.ok) {
         setFoods((prev) => prev.filter((f) => f.id !== foodId));
       }
@@ -265,7 +273,7 @@ export const OwnerPortalPage: React.FC = () => {
   // Toggle Food Availability
   const handleToggleFoodAvailability = async (food: FoodItem) => {
     try {
-      const res = await fetch(`/api/owner/foods/${food.id}`, {
+      const res = await apiFetch(`/api/owner/foods/${food.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isAvailable: !food.isAvailable }),
@@ -282,7 +290,7 @@ export const OwnerPortalPage: React.FC = () => {
   // Update Order Status
   const handleUpdateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
-      const res = await fetch(`/api/owner/orders/${orderId}/status`, {
+      const res = await apiFetch(`/api/owner/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),

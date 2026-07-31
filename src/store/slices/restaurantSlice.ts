@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Restaurant, FoodItem, Review } from '../../types';
+import { apiFetch } from '../../utils/apiBase';
 
 interface RestaurantState {
   restaurants: Restaurant[];
@@ -55,7 +56,7 @@ export const fetchRestaurants = createAsyncThunk(
         if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
       }
 
-      const res = await fetch(`/api/restaurants?${queryParams.toString()}`);
+      const res = await apiFetch(`/api/restaurants?${queryParams.toString()}`);
       const data = await res.json();
       if (!res.ok) return rejectWithValue('Failed to fetch restaurants');
       return data;
@@ -69,7 +70,7 @@ export const fetchRestaurantDetails = createAsyncThunk(
   'restaurants/fetchRestaurantDetails',
   async (restaurantId: string, { rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/restaurants/${restaurantId}`);
+      const res = await apiFetch(`/api/restaurants/${restaurantId}`);
       const data = await res.json();
       if (!res.ok) return rejectWithValue('Failed to fetch restaurant details');
       return data;

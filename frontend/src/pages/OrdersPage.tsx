@@ -6,6 +6,7 @@ import { addToCart } from '../store/slices/cartSlice';
 import { OrderTrackerModal } from '../components/OrderTrackerModal';
 import { Order } from '../types';
 import { showToast } from '../utils/toast';
+import { apiFetch } from '../utils/apiBase';
 
 interface OrdersPageProps {
   onNavigateHome: () => void;
@@ -51,7 +52,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
 
     setSubmittingReview(true);
     try {
-      await fetch('/api/reviews', {
+      await apiFetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

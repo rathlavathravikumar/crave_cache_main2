@@ -147,6 +147,10 @@ export interface Order {
   couponCode?: string;
   totalAmount: number;
   status: OrderStatus;
+  /**
+   * Two methods are offered: online card payment (default) and cash on
+   * delivery. Cash orders are created with paymentStatus 'Pending'.
+   */
   paymentMethod: 'Stripe Credit/Debit Card' | 'Credit/Debit Card' | 'Cash on Delivery';
   paymentStatus: 'Pending' | 'Paid' | 'Failed' | 'Refunded';
   stripePaymentIntentId?: string;

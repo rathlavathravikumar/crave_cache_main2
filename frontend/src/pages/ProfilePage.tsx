@@ -3,6 +3,7 @@ import { User as UserIcon, MapPin, Mail, Phone, Plus, Trash2, Camera, Upload, Ch
 import { useAppDispatch, useAppSelector } from '../hooks/reduxHooks';
 import { updateProfile, addAddress, removeAddress, setSelectedAddress } from '../store/slices/authSlice';
 import { Address } from '../types';
+import { ImageUploader } from '../components/ui';
 
 const SAMPLE_AVATARS = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
@@ -21,7 +22,6 @@ export const ProfilePage: React.FC = () => {
   const [phone, setPhone] = useState(user?.phone || '+91 98765 43210');
   const [avatar, setAvatar] = useState(user?.avatar || SAMPLE_AVATARS[0]);
   const [isSaved, setIsSaved] = useState(false);
-  const [uploadError, setUploadError] = useState('');
 
   // Sync state if user changes
   useEffect(() => {
@@ -41,63 +41,6 @@ export const ProfilePage: React.FC = () => {
   const [state, setState] = useState('DL');
   const [zipCode, setZipCode] = useState('110001');
 
-  // Handle local image file upload
-  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    setUploadError('');
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setUploadError('Please select a valid image file (JPG, PNG, WebP).');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      setUploadError('File size should be less than 5MB.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        const img = new Image();
-        img.onload = () => {
-          const maxDim = 300;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > maxDim) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            }
-          } else {
-            if (height > maxDim) {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            setAvatar(compressedDataUrl);
-          } else {
-            setAvatar(reader.result as string);
-          }
-        };
-        img.src = reader.result;
-      }
-    };
-    reader.onerror = () => {
-      setUploadError('Failed to process image file.');
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,51 +96,28 @@ export const ProfilePage: React.FC = () => {
         {/* Left Side: User Profile Editor */}
         <div className="md:col-span-6 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-6">
           
-          {/* Avatar Picture & Upload Controls */}
+          {/* Avatar — uploads to Cloudinary via /api/uploads/image */}
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              <div className="relative group shrink-0">
-                <img
-                  src={avatar}
-                  alt={name}
-                  className="w-20 h-20 rounded-2xl object-cover ring-4 ring-orange-500/20 shadow-md"
-                />
-                <label className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                  <Camera className="w-6 h-6" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageFileUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-
-              <div>
+              <div className="min-w-0">
                 <h3 className="text-base font-extrabold text-slate-900">{name}</h3>
                 <p className="text-xs text-slate-500">{email}</p>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[10px] font-extrabold uppercase">
-                    Role: {user?.role}
-                  </span>
-                  <label className="text-[11px] font-bold text-orange-600 hover:underline cursor-pointer flex items-center gap-1">
-                    <Upload className="w-3 h-3" /> Upload Photo
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageFileUpload}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
+                <span className="mt-1 inline-block rounded-full bg-orange-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-orange-800">
+                  Role: {user?.role}
+                </span>
               </div>
             </div>
 
-            {uploadError && (
-              <p className="text-xs font-semibold text-red-600 bg-red-50 p-2 rounded-xl border border-red-200">
-                {uploadError}
-              </p>
-            )}
+            <ImageUploader
+              value={avatar}
+              onChange={setAvatar}
+              folder="cravecache/avatars"
+              label="Profile photo"
+              hint="Square images look best. Max 8MB."
+              maxDimension={400}
+              rounded
+            />
+
 
             {/* Avatar Preset Options */}
             <div>

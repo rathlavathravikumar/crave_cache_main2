@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { FoodItem } from '../../types';
+import { apiFetch } from '../../utils/apiBase';
 
 interface FoodState {
   allFoods: FoodItem[];
@@ -33,7 +34,7 @@ export const fetchAllFoods = createAsyncThunk(
         if (filters.isVeg) queryParams.append('isVeg', 'true');
       }
 
-      const res = await fetch(`/api/food-items?${queryParams.toString()}`);
+      const res = await apiFetch(`/api/food-items?${queryParams.toString()}`);
       const data = await res.json();
       if (!res.ok) return rejectWithValue('Failed to fetch food items');
       return data;

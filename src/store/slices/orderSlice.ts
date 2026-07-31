@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Order, OrderStatus } from '../../types';
+import { apiFetch } from '../../utils/apiBase';
 
 interface OrderState {
   orders: Order[];
@@ -23,7 +24,7 @@ export const fetchUserOrders = createAsyncThunk(
   'orders/fetchUserOrders',
   async (userId: string, { rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/orders?userId=${userId}`);
+      const res = await apiFetch(`/api/orders?userId=${userId}`);
       const data = await res.json();
       if (!res.ok) return rejectWithValue('Failed to fetch orders');
       return data;
@@ -37,7 +38,7 @@ export const fetchOrderById = createAsyncThunk(
   'orders/fetchOrderById',
   async (orderId: string, { rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/orders/${orderId}`);
+      const res = await apiFetch(`/api/orders/${orderId}`);
       const data = await res.json();
       if (!res.ok) return rejectWithValue('Failed to fetch order details');
       return data;
@@ -51,7 +52,7 @@ export const createNewOrder = createAsyncThunk(
   'orders/createNewOrder',
   async (orderPayload: any, { rejectWithValue }) => {
     try {
-      const res = await fetch('/api/orders', {
+      const res = await apiFetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderPayload),
@@ -69,7 +70,7 @@ export const cancelOrder = createAsyncThunk(
   'orders/cancelOrder',
   async (orderId: string, { rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/orders/${orderId}/cancel`, {
+      const res = await apiFetch(`/api/orders/${orderId}/cancel`, {
         method: 'PUT',
       });
       const data = await res.json();

@@ -14,6 +14,9 @@ export const FoodCard: React.FC<FoodCardProps> = ({ foodItem }) => {
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.cart.items);
   const wishlistFoodIds = useAppSelector((state) => state.wishlist.foodIds);
+  const role = useAppSelector((state) => state.auth.user?.role);
+
+  const canOrder = role === 'customer';
 
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
@@ -162,9 +165,11 @@ export const FoodCard: React.FC<FoodCardProps> = ({ foodItem }) => {
             loading="lazy"
           />
 
-          {/* ADD / Quantity Counter Button Overlay */}
+          {/* ADD / Quantity Counter Button Overlay.
+              Ordering is a customer capability — owner/admin see saved dishes
+              without a cart control they could never complete. */}
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-10">
-            {totalQty > 0 ? (
+            {!canOrder ? null : totalQty > 0 ? (
               <div className="flex items-center gap-2 px-2 py-1.5 bg-[#1F2937] text-white rounded-xl shadow-lg border border-slate-700 text-xs font-black">
                 <button
                   onClick={handleDecrement}

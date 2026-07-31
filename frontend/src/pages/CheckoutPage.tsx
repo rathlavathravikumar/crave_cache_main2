@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   CreditCard,
   ShieldCheck,
@@ -10,11 +10,16 @@ import {
   Sparkles,
   ArrowLeft,
   Zap,
+  Wallet,
+  Check,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../hooks/reduxHooks';
 import { createNewOrder } from '../store/slices/orderSlice';
 import { clearCart } from '../store/slices/cartSlice';
 import { showToast } from '../utils/toast';
+import { apiFetch } from '../utils/apiBase';
+import { Button } from '../components/ui';
+import { StripeCardForm, isStripeConfigured } from '../payments/StripeCardForm';
 
 interface CheckoutPageProps {
   onBack: () => void;
@@ -28,12 +33,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
     (state) => state.cart
   );
 
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cod'>('card');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvc, setCardCvc] = useState('');
-  const [cardName, setCardName] = useState(user?.name || 'Alex Johnson');
+  // Online is preselected; cash on delivery is the alternative.
+  const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
   const [isProcessing, setIsProcessing] = useState(false);
+  /*
+   * null while unknown. The server is the authority on whether Stripe is live:
+   * having a publishable key in the client build does not mean the server has a
+   * secret key, or that PAYMENT_MODE allows real charges.
+   */
+  const [stripeLive, setStripeLive] = useState<boolean | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -43,54 +51,39 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
   const taxAndPackaging = items.length > 0 ? Math.round(itemTotal * 0.05 + 25) : 0;
   const finalTotal = Math.max(0, Math.round(itemTotal + deliveryFee + taxAndPackaging - discountAmount));
 
-  const handleFillDemoCard = () => {
-    setCardNumber('4242 •••• •••• 4242');
-    setCardExpiry('12/28');
-    setCardCvc('123');
-    setCardName(user?.name || 'Alex Johnson');
-  };
+  // Ask the server which payment processor is active.
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch('/api/payments/config')
+      .then((r) => r.json())
+      .then((cfg) => {
+        if (!cancelled) setStripeLive(Boolean(cfg?.live));
+      })
+      .catch(() => {
+        if (!cancelled) setStripeLive(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const handlePlaceOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Real Stripe needs both halves: a live server and a publishable key here.
+  const useStripe = stripeLive === true && isStripeConfigured;
+
+  /**
+   * Creates the order record.
+   *
+   * Payment is no longer performed here. For card orders Stripe has already
+   * charged and the server has re-verified the intent by the time this runs, so
+   * this only persists the order. `paymentIntentId` is empty for cash orders.
+   */
+  const finaliseOrder = async (paymentIntentId: string) => {
     if (items.length === 0) return;
 
     setIsProcessing(true);
     setErrorMsg('');
 
     try {
-      let stripePaymentIntentId = '';
-
-      if (paymentMethod === 'card') {
-        if (!cardNumber || !cardExpiry || !cardCvc || !cardName) {
-          throw new Error('Please fill in all credit/debit card details.');
-        }
-
-        // Step 1: Create Payment Intent on Server
-        const intentRes = await fetch('/api/payments/create-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: finalTotal, currency: 'inr' }),
-        });
-        const intentData = await intentRes.json();
-
-        if (!intentRes.ok) throw new Error(intentData.error || 'Payment initialization failed');
-
-        stripePaymentIntentId = intentData.paymentIntentId;
-
-        // Step 2: Confirm Payment Intent on Server
-        const confirmRes = await fetch('/api/payments/confirm', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paymentIntentId: intentData.paymentIntentId }),
-        });
-        const confirmData = await confirmRes.json();
-
-        if (!confirmRes.ok || confirmData.status !== 'succeeded') {
-          throw new Error(confirmData.error || 'Card authorization failed. Please check details.');
-        }
-      }
-
-      // Step 3: Create Order Record
       const orderPayload = {
         userId: user?.id || 'usr_guest',
         restaurantId: restaurantId || 'rest_1',
@@ -110,9 +103,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
           zipCode: '110001',
           landmark: 'Near Connaught Place',
         },
-        paymentMethod: paymentMethod === 'card' ? 'Credit/Debit Card' : 'Cash on Delivery',
-        paymentStatus: paymentMethod === 'card' ? 'Paid' : 'Pending',
-        paymentIntentId: stripePaymentIntentId,
+        paymentMethod:
+          paymentMethod === 'cod' ? 'Cash on Delivery' : 'Credit/Debit Card',
+        // The server decides the authoritative status; sent for completeness.
+        paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
+        paymentIntentId,
         couponCode: appliedCoupon?.code,
       };
 
@@ -121,7 +116,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
       if (createNewOrder.fulfilled.match(result)) {
         setPaymentSuccess(true);
         dispatch(clearCart());
-        showToast.success('Payment Successful & Order Placed!');
+        showToast.success(
+          paymentMethod === 'cod'
+            ? 'Order placed — pay the driver on delivery.'
+            : 'Payment successful — order placed!'
+        );
         setTimeout(() => {
           onOrderSuccess(result.payload.id);
         }, 1500);
@@ -196,153 +195,150 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
               <span className="text-xs text-slate-400">Powered by Stripe</span>
             </div>
 
-            {/* Payment Method Tabs */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('card')}
-                className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                  paymentMethod === 'card'
-                    ? 'border-orange-500 bg-orange-50/60 text-orange-950 shadow-2xs'
-                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <CreditCard className="w-4 h-4 text-orange-600" />
-                <span>Credit / Debit Card</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('cod')}
-                className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                  paymentMethod === 'cod'
-                    ? 'border-orange-500 bg-orange-50/60 text-orange-950 shadow-2xs'
-                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                💵 <span>Cash on Delivery</span>
-              </button>
+            {/*
+              Two methods, online preselected. Which processor handles an online
+              payment is decided by the server (GET /api/payments/config):
+                stripe -> real Stripe Elements card entry
+                demo   -> built-in demo processor, no Stripe account needed
+            */}
+            <div className="grid gap-2.5 sm:grid-cols-2" role="radiogroup" aria-label="Payment method">
+              {([
+                {
+                  value: 'online' as const,
+                  icon: CreditCard,
+                  title: useStripe ? 'Pay online by card' : 'Pay online',
+                  blurb: useStripe ? 'Secured by Stripe' : 'Instant demo checkout',
+                },
+                {
+                  value: 'cod' as const,
+                  icon: Wallet,
+                  title: 'Cash on delivery',
+                  blurb: 'Pay the driver on arrival',
+                },
+              ]).map(({ value, icon: Icon, title, blurb }) => {
+                const selected = paymentMethod === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => {
+                      setPaymentMethod(value);
+                      setErrorMsg('');
+                    }}
+                    className={`flex items-start gap-3 rounded-card border p-3.5 text-left transition-all ${
+                      selected
+                        ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500'
+                        : 'border-surface-line bg-white hover:border-ink-400/50 hover:bg-surface-sunken/60'
+                    }`}
+                  >
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-control transition-colors ${
+                        selected ? 'bg-brand-500 text-white' : 'bg-surface-sunken text-ink-500'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={2.5} />
+                    </span>
+                    <span className="min-w-0">
+                      <span
+                        className={`block text-xs font-black tracking-tight ${
+                          selected ? 'text-brand-700' : 'text-ink-900'
+                        }`}
+                      >
+                        {title}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] font-semibold leading-tight text-ink-500">
+                        {blurb}
+                      </span>
+                    </span>
+                    {selected && (
+                      <span
+                        aria-hidden="true"
+                        className="ml-auto flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white"
+                      >
+                        <Check className="h-2.5 w-2.5" strokeWidth={4} />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
-            {paymentMethod === 'card' && (
-              <form onSubmit={handlePlaceOrder} className="space-y-4 pt-2">
-                
-                {/* Stripe Quick Demo Filler Button */}
-                <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-amber-900 font-medium">
-                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>Test Payment Integration Mode</span>
-                  </div>
-                  <button
+            <div className="space-y-4 pt-2">
+              {errorMsg && (
+                <div
+                  role="alert"
+                  className="rounded-control border border-danger-500/25 bg-danger-50 p-3 text-xs font-bold text-danger-600"
+                >
+                  {errorMsg}
+                </div>
+              )}
+
+              {paymentMethod === 'cod' ? (
+                <>
+                  <p className="rounded-card border border-surface-line bg-surface-sunken/60 p-3.5 text-[11px] font-semibold leading-relaxed text-ink-600">
+                    Please have ₹{finalTotal} ready for the driver. Payment is marked pending until
+                    delivery is completed.
+                  </p>
+
+                  <Button
                     type="button"
-                    onClick={handleFillDemoCard}
-                    className="py-1 px-2.5 bg-amber-600 text-white font-bold rounded-lg text-[11px] shadow-2xs hover:bg-amber-700 transition-colors"
+                    size="lg"
+                    fullWidth
+                    variant="secondary"
+                    loading={isProcessing}
+                    loadingText="Placing order…"
+                    disabled={items.length === 0 || paymentSuccess}
+                    onClick={() => finaliseOrder('')}
+                    icon={paymentSuccess ? <CheckCircle2 className="h-4 w-4" /> : <Wallet className="h-4 w-4" />}
                   >
-                    Auto-Fill Test Card
-                  </button>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Cardholder Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={cardName}
-                    onChange={(e) => setCardName(e.target.value)}
-                    placeholder="Alex Johnson"
-                    className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-orange-500 font-semibold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Card Number</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      required
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      placeholder="4242 4242 4242 4242"
-                      className="w-full p-3 pl-10 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-orange-500 font-mono font-bold"
-                    />
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Expiry (MM/YY)</label>
-                    <input
-                      type="text"
-                      required
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
-                      placeholder="12/28"
-                      className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-orange-500 font-mono font-bold"
-                    />
+                    {paymentSuccess
+                      ? 'Order placed — redirecting…'
+                      : `Confirm order · ₹${finalTotal} on delivery`}
+                  </Button>
+                </>
+              ) : useStripe ? (
+                <StripeCardForm
+                  amount={finalTotal}
+                  orderRef={restaurantName || undefined}
+                  submitLabel={`Pay ₹${finalTotal} & Place Order`}
+                  disabled={items.length === 0}
+                  onError={(m) => setErrorMsg(m)}
+                  onPaid={(paymentIntentId) => finaliseOrder(paymentIntentId)}
+                />
+              ) : (
+                <>
+                  <div className="rounded-card border border-surface-line bg-surface-sunken/60 p-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-ink-500">Amount payable</span>
+                      <span className="text-sm font-black tracking-tight text-ink-900">
+                        ₹{finalTotal}
+                      </span>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">CVC Code</label>
-                    <input
-                      type="password"
-                      required
-                      maxLength={4}
-                      value={cardCvc}
-                      onChange={(e) => setCardCvc(e.target.value)}
-                      placeholder="123"
-                      className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-orange-500 font-mono font-bold"
-                    />
-                  </div>
-                </div>
+                  <Button
+                    type="button"
+                    size="lg"
+                    fullWidth
+                    loading={isProcessing}
+                    loadingText="Confirming payment…"
+                    disabled={items.length === 0 || paymentSuccess}
+                    onClick={() => finaliseOrder('')}
+                    icon={paymentSuccess ? <CheckCircle2 className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                  >
+                    {paymentSuccess
+                      ? 'Payment confirmed — redirecting…'
+                      : `Pay ₹${finalTotal} & Place Order`}
+                  </Button>
 
-                {errorMsg && (
-                  <div className="p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 font-medium">
-                    {errorMsg}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isProcessing || items.length === 0}
-                  className="w-full py-4 px-6 bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-black text-sm rounded-2xl shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Zap className="w-5 h-5 animate-spin text-amber-200" />
-                      <span>Authorizing Stripe Payment...</span>
-                    </>
-                  ) : paymentSuccess ? (
-                    <>
-                      <CheckCircle2 className="w-5 h-5 text-emerald-300" />
-                      <span>Payment Confirmed! Redirecting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4" />
-                      <span>Pay ₹{finalTotal} & Place Order</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </form>
-            )}
-
-            {paymentMethod === 'cod' && (
-              <div className="space-y-4 pt-2">
-                <p className="text-xs text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-200 leading-relaxed">
-                  Please keep exact cash ready upon delivery. Our driver will carry a wireless card machine as well.
-                </p>
-
-                <button
-                  onClick={handlePlaceOrder}
-                  disabled={isProcessing || items.length === 0}
-                  className="w-full py-4 px-6 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm rounded-2xl shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isProcessing ? 'Placing Order...' : `Confirm Order for ₹${finalTotal} (Cash)`}
-                </button>
+                  <p className="text-center text-[11px] font-medium text-ink-400">
+                    Demo mode — no real money moves and no card is charged.
+                  </p>
+                </>
+              )}
               </div>
-            )}
 
           </div>
 

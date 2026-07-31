@@ -1,6 +1,6 @@
 {
-  "name": "Remix: Remix: CraveCache",
-  "description": "AI Powered Food Ordering Platform with restaurant browsing, custom food customization, AI ordering assistant, cart \u0026 checkout, order tracking, and admin management.",
+  "name": "CraveCache",
+  "description": "AI-assisted food ordering platform with restaurant browsing, dish customization, a Gemini-powered ordering assistant, cart & checkout, order tracking, and role-separated portals for customers, restaurant owners and administrators.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

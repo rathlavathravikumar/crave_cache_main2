@@ -28,6 +28,8 @@ import { updateOrderStatusLocal } from '../store/slices/orderSlice';
 import { updateProfile } from '../store/slices/authSlice';
 import { Restaurant, FoodItem, OrderStatus, User, Role } from '../types';
 import { showToast } from '../utils/toast';
+import { confirm } from '../components/ui';
+import { apiFetch } from '../utils/apiBase';
 
 export const AdminDashboardPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -86,7 +88,7 @@ export const AdminDashboardPage: React.FC = () => {
 
   const loadCoupons = async () => {
     try {
-      const res = await fetch('/api/coupons');
+      const res = await apiFetch('/api/coupons');
       const data = await res.json();
       setCoupons(data);
     } catch (err) {
@@ -102,7 +104,7 @@ export const AdminDashboardPage: React.FC = () => {
 
   const handleUpdateOrderStatus = async (orderId: string, status: OrderStatus) => {
     try {
-      await fetch(`/api/orders/${orderId}/status`, {
+      await apiFetch(`/api/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -156,14 +158,14 @@ export const AdminDashboardPage: React.FC = () => {
 
     if (editingRestaurant) {
       // Update
-      await fetch(`/api/admin/restaurants/${editingRestaurant.id}`, {
+      await apiFetch(`/api/admin/restaurants/${editingRestaurant.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
     } else {
       // Create
-      await fetch('/api/admin/restaurants', {
+      await apiFetch('/api/admin/restaurants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -176,9 +178,16 @@ export const AdminDashboardPage: React.FC = () => {
   };
 
   const handleDeleteRestaurant = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this restaurant and its menu items?')) return;
+    const ok = await confirm({
+      title: 'Delete this restaurant?',
+      description:
+        'The restaurant and every menu item belonging to it will be removed. This cannot be undone.',
+      confirmLabel: 'Delete restaurant',
+      tone: 'danger',
+    });
+    if (!ok) return;
     try {
-      const res = await fetch(`/api/admin/restaurants/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/admin/restaurants/${id}`, { method: 'DELETE' });
       if (res.ok) {
         dispatch(fetchRestaurants());
         dispatch(fetchAllFoods());
@@ -235,13 +244,13 @@ export const AdminDashboardPage: React.FC = () => {
     try {
       let res;
       if (editingFood) {
-        res = await fetch(`/api/admin/foods/${editingFood.id}`, {
+        res = await apiFetch(`/api/admin/foods/${editingFood.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       } else {
-        res = await fetch('/api/admin/foods', {
+        res = await apiFetch('/api/admin/foods', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -264,9 +273,15 @@ export const AdminDashboardPage: React.FC = () => {
   };
 
   const handleDeleteFood = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this food item?')) return;
+    const ok = await confirm({
+      title: 'Delete this menu item?',
+      description: 'Customers will no longer see it. Past orders keep their record of the item.',
+      confirmLabel: 'Delete item',
+      tone: 'danger',
+    });
+    if (!ok) return;
     try {
-      const res = await fetch(`/api/admin/foods/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/admin/foods/${id}`, { method: 'DELETE' });
       if (res.ok) {
         dispatch(fetchAllFoods());
         dispatch(fetchRestaurants());
@@ -284,7 +299,7 @@ export const AdminDashboardPage: React.FC = () => {
 
   const handleAddCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch('/api/coupons', {
+    await apiFetch('/api/coupons', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -301,7 +316,7 @@ export const AdminDashboardPage: React.FC = () => {
   };
 
   const handleDeleteCoupon = async (id: string) => {
-    await fetch(`/api/coupons/${id}`, { method: 'DELETE' });
+    await apiFetch(`/api/coupons/${id}`, { method: 'DELETE' });
     loadCoupons();
   };
 
@@ -340,13 +355,13 @@ export const AdminDashboardPage: React.FC = () => {
     try {
       let res;
       if (editingUser) {
-        res = await fetch(`/api/admin/users/${editingUser.id}`, {
+        res = await apiFetch(`/api/admin/users/${editingUser.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       } else {
-        res = await fetch('/api/admin/users', {
+        res = await apiFetch('/api/admin/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -369,9 +384,15 @@ export const AdminDashboardPage: React.FC = () => {
   };
 
   const handleDeleteUser = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete user "${name}"?`)) return;
+    const ok = await confirm({
+      title: `Delete ${name}?`,
+      description: 'Their account and access will be removed permanently.',
+      confirmLabel: 'Delete user',
+      tone: 'danger',
+    });
+    if (!ok) return;
     try {
-      const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
       if (res.ok) {
         dispatch(fetchAdminUsers(userSearch));
         dispatch(fetchAdminAnalytics());
@@ -394,7 +415,7 @@ export const AdminDashboardPage: React.FC = () => {
 
   const handleQuickChangeRole = async (usr: User, newRole: Role) => {
     try {
-      const res = await fetch(`/api/admin/users/${usr.id}/role`, {
+      const res = await apiFetch(`/api/admin/users/${usr.id}/role`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: newRole }),

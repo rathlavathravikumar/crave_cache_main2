@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   UtensilsCrossed,
   MapPin,
@@ -19,7 +19,6 @@ import { logout, setSelectedAddress } from '../store/slices/authSlice';
 import { toggleCartDrawer } from '../store/slices/cartSlice';
 import { toggleAIAssistant } from '../store/slices/aiSlice';
 import { setSearchQuery, fetchRestaurants } from '../store/slices/restaurantSlice';
-import { AuthModal } from './AuthModal';
 
 interface HeaderProps {
   currentView: string;
@@ -34,12 +33,40 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
   const wishlistFoodIds = useAppSelector((state) => state.wishlist.foodIds);
   const searchQuery = useAppSelector((state) => state.restaurants.searchQuery);
 
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
+  // Publish the real header height so fixed overlays (notifications) can sit
+  // clear of it instead of covering the nav, cart and profile controls.
+  const headerRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+
+    const publish = () => {
+      document.documentElement.style.setProperty(
+        '--app-header-height',
+        `${Math.round(el.getBoundingClientRect().height)}px`
+      );
+    };
+
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.setProperty('--app-header-height', '0px');
+    };
+  }, []);
+
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const wishlistTotal = wishlistRestaurantIds.length + wishlistFoodIds.length;
+
+  // Cart, search and the AI assistant are customer capabilities: their drawers
+  // are only mounted for customers, so showing them to owner/admin produced
+  // buttons that could never do anything.
+  const isCustomer = user?.role === 'customer';
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -52,7 +79,10 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs transition-all">
+      <header
+        ref={headerRef}
+        className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs transition-all"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20 gap-4">
             
@@ -95,55 +125,64 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
               </button>
             </div>
 
-            {/* Global Search Bar */}
-            <div className="hidden lg:flex flex-1 max-w-md items-center relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                placeholder="Search restaurants, cuisines, dishes..."
-                className="w-full pl-10 pr-4 py-2 text-xs font-medium bg-[#F3F4F6] hover:bg-slate-100/90 focus:bg-white border border-[#E5E7EB] rounded-xl focus:ring-2 focus:ring-[#FF5200]/20 focus:border-[#FF5200] outline-none transition-all"
-              />
-            </div>
+            {/* Global Search Bar — searches the customer catalogue only */}
+            {isCustomer && (
+              <div className="hidden lg:flex flex-1 max-w-md items-center relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  placeholder="Search restaurants, cuisines, dishes..."
+                  aria-label="Search restaurants, cuisines and dishes"
+                  className="w-full pl-10 pr-4 py-2 text-xs font-medium bg-[#F3F4F6] hover:bg-slate-100/90 focus:bg-white border border-[#E5E7EB] rounded-xl focus:ring-2 focus:ring-[#FF5200]/20 focus:border-[#FF5200] outline-none transition-all"
+                />
+              </div>
+            )}
 
             {/* Right Action Icons */}
             <div className="flex items-center gap-2 sm:gap-3">
-              
-              {/* AI Food Assistant Trigger */}
-              <button
-                onClick={() => dispatch(toggleAIAssistant(true))}
-                className="flex items-center gap-2 py-2 px-3.5 rounded-xl bg-[#FF5200] hover:bg-[#e04800] text-white text-xs font-bold shadow-md shadow-[#FF5200]/20 hover:scale-105 active:scale-95 transition-all"
-              >
-                <Sparkles className="w-4 h-4 text-amber-200 animate-pulse" />
-                <span className="hidden sm:inline">AI Assistant</span>
-              </button>
 
-              {/* Wishlist */}
+              {/* AI Food Assistant Trigger */}
+              {isCustomer && (
+                <button
+                  onClick={() => dispatch(toggleAIAssistant(true))}
+                  className="flex items-center gap-2 py-2 px-3.5 rounded-xl bg-[#FF5200] hover:bg-[#e04800] text-white text-xs font-bold shadow-md shadow-[#FF5200]/20 hover:scale-105 active:scale-95 transition-all"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-200 animate-pulse" />
+                  <span className="hidden sm:inline">AI Assistant</span>
+                </button>
+              )}
+
+              {/* Favourites — available to every role */}
               <button
                 onClick={() => onNavigate('wishlist')}
+                aria-label={`Saved favourites${wishlistTotal > 0 ? ` (${wishlistTotal})` : ''}`}
                 className="relative p-2.5 rounded-xl text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                title="Wishlist"
+                title="Saved favourites"
               >
                 <Heart className="w-5 h-5" />
                 {wishlistTotal > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center animate-bounce">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
                     {wishlistTotal}
                   </span>
                 )}
               </button>
 
               {/* Cart Drawer Toggle */}
-              <button
-                onClick={() => dispatch(toggleCartDrawer(true))}
-                className="relative flex items-center gap-2 py-2 px-3.5 rounded-xl bg-[#FFF5F0] hover:bg-orange-100/80 text-[#FF5200] border border-orange-200/80 font-bold text-xs transition-colors"
-              >
-                <ShoppingBag className="w-4 h-4 text-[#FF5200]" />
-                <span className="hidden sm:inline">Cart</span>
-                <span className="px-2 py-0.5 rounded-full bg-[#FF5200] text-white text-[11px] font-extrabold ml-0.5">
-                  {totalCartCount}
-                </span>
-              </button>
+              {isCustomer && (
+                <button
+                  onClick={() => dispatch(toggleCartDrawer(true))}
+                  aria-label={`Open cart (${totalCartCount} items)`}
+                  className="relative flex items-center gap-2 py-2 px-3.5 rounded-xl bg-[#FFF5F0] hover:bg-orange-100/80 text-[#FF5200] border border-orange-200/80 font-bold text-xs transition-colors"
+                >
+                  <ShoppingBag className="w-4 h-4 text-[#FF5200]" />
+                  <span className="hidden sm:inline">Cart</span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#FF5200] text-white text-[11px] font-extrabold ml-0.5">
+                    {totalCartCount}
+                  </span>
+                </button>
+              )}
 
               {/* User Account / Profile Menu */}
               {isAuthenticated ? (
@@ -233,6 +272,35 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
                         </button>
                       )}
 
+                      {/* Account screens are available to every role, not just
+                          customers — owner/admin previously had no way to edit
+                          their own profile at all. */}
+                      {!isCustomer && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setIsProfileMenuOpen(false);
+                              onNavigate('profile');
+                            }}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                          >
+                            <UserIcon className="w-4 h-4 text-slate-500" />
+                            Profile Settings
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsProfileMenuOpen(false);
+                              onNavigate('wishlist');
+                            }}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                          >
+                            <Heart className="w-4 h-4 text-slate-500" />
+                            Saved Favourites
+                          </button>
+                        </>
+                      )}
+
                       <div className="my-1 border-t border-slate-100" />
 
                       <button
@@ -248,14 +316,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
                     </div>
                   )}
                 </div>
-              ) : (
-                <button
-                  onClick={() => setIsAuthOpen(true)}
-                  className="py-2 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition-colors shadow-sm"
-                >
-                  Sign In
-                </button>
-              )}
+              ) : null}
             </div>
 
           </div>
@@ -322,8 +383,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
         </div>
       )}
 
-      {/* Auth Modal */}
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </>
   );
 };

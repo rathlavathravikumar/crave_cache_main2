@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User, Address } from '../../types';
+import { apiFetch } from '../../utils/apiBase';
 
 interface AuthState {
   user: User | null;
@@ -13,10 +14,19 @@ interface AuthState {
 const savedUser = localStorage.getItem('cravecache_user');
 const savedToken = localStorage.getItem('cravecache_token');
 
-const initialUser: User | null = savedUser
-  ? JSON.parse(savedUser)
+const parsedSavedUser: any = savedUser ? JSON.parse(savedUser) : null;
+// One-time migration: earlier builds seeded the mock session with an id
+// ('usr_alex') that never matched the backend's seed user ('usr_customer_1'),
+// which made profile updates and order history silently fail.
+if (parsedSavedUser && parsedSavedUser.id === 'usr_alex') {
+  parsedSavedUser.id = 'usr_customer_1';
+  localStorage.setItem('cravecache_user', JSON.stringify(parsedSavedUser));
+}
+
+const initialUser: User | null = parsedSavedUser
+  ? parsedSavedUser
   : {
-      id: 'usr_alex',
+      id: 'usr_customer_1',
       name: 'Alex Johnson',
       email: 'alex@example.com',
       role: 'customer',
@@ -61,7 +71,7 @@ export const loginUser = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -82,13 +92,47 @@ export const registerUser = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await apiFetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       });
       const data = await res.json();
       if (!res.ok) return rejectWithValue(data.error || 'Registration failed');
+      return data;
+    } catch (err: any) {
+      return rejectWithValue(err.message || 'Network error');
+    }
+  }
+);
+
+/**
+ * Trades a verified Clerk session for a CraveCache user record.
+ *
+ * The role is decided by the server from its email allowlist — we intentionally
+ * never send a role from the browser on this path, so a user can't grant
+ * themselves owner/admin.
+ */
+export const authenticateWithClerk = createAsyncThunk(
+  'auth/authenticateWithClerk',
+  async (
+    payload: {
+      sessionToken: string;
+      profile: { email: string; name?: string; avatar?: string; provider?: string };
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiFetch('/api/auth/clerk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${payload.sessionToken}`,
+        },
+        body: JSON.stringify({ profile: payload.profile }),
+      });
+      const data = await res.json();
+      if (!res.ok) return rejectWithValue(data.error || 'Clerk sign-in failed');
       return data;
     } catch (err: any) {
       return rejectWithValue(err.message || 'Network error');
@@ -104,8 +148,11 @@ export const updateProfile = createAsyncThunk(
   ) => {
     try {
       const state: any = getState();
-      const userId = profileData.userId || state.auth.user?.id || 'usr_alex';
-      const res = await fetch(`/api/auth/profile/${userId}`, {
+      // No hardcoded fallback id here: the server 404s on an unknown id rather
+      // than editing whichever account happens to be first in the store.
+      const userId = profileData.userId || state.auth.user?.id;
+      if (!userId) return rejectWithValue('You need to be signed in to update your profile.');
+      const res = await apiFetch(`/api/auth/profile/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profileData),
@@ -171,6 +218,23 @@ const authSlice = createSlice({
         localStorage.setItem('cravecache_token', action.payload.token);
       })
       .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(authenticateWithClerk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(authenticateWithClerk.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
+        state.selectedAddress = action.payload.user.addresses?.[0] || null;
+        localStorage.setItem('cravecache_user', JSON.stringify(action.payload.user));
+        localStorage.setItem('cravecache_token', action.payload.token);
+      })
+      .addCase(authenticateWithClerk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })

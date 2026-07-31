@@ -1,3 +1,5 @@
+# Single web service: one Node process serves the API and the built client.
+# See DEPLOYMENT.md for the full walkthrough.
 services:
   - type: web
     name: cravecache-platform
@@ -6,8 +8,53 @@ services:
     plan: free
     buildCommand: npm install && npm run build
     startCommand: npm start
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
+
+      # MongoDB Atlas connection string. Without it the service runs on an
+      # in-memory store that resets on every restart and redeploy.
+      - key: MONGODB_URI
+        sync: false
+
+      # Gemini powers the AI assistant and recommendations.
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # Clerk social sign-in. The VITE_ key is inlined at BUILD time, so
+      # changing it requires a redeploy rather than just a restart.
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+
+      # Server-side role assignment (comma-separated emails).
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: OWNER_EMAILS
+        sync: false
+
+      # Stripe. Without these, card checkout stays in simulated mode.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: VITE_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_CURRENCY
+        value: inr
+
+      # auto | simulate | stripe  — 'simulate' needs no Stripe account.
+      - key: PAYMENT_MODE
+        value: auto
+
+      # Cloudinary image storage. Without all three, uploads are not persisted.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      # Disable the passwordless demo login on a public deployment.
+      - key: ALLOW_DEMO_LOGIN
+        value: "false"

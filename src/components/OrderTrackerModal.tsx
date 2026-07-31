@@ -15,6 +15,7 @@ import {
 import { Order, OrderStatus } from '../types';
 import { useAppDispatch } from '../hooks/reduxHooks';
 import { cancelOrder, setActiveTrackOrderId } from '../store/slices/orderSlice';
+import { confirm } from './ui';
 
 interface OrderTrackerModalProps {
   order: Order;
@@ -52,8 +53,15 @@ export const OrderTrackerModal: React.FC<OrderTrackerModalProps> = ({ order, onC
   const currentStageIdx = getStageIndex(order.status);
   const isCancelled = order.status === 'Cancelled';
 
-  const handleCancelOrder = () => {
-    if (confirm('Are you sure you want to cancel this order?')) {
+  const handleCancelOrder = async () => {
+    const ok = await confirm({
+      title: 'Cancel this order?',
+      description: 'The restaurant will be notified and any payment will be refunded.',
+      confirmLabel: 'Cancel order',
+      cancelLabel: 'Keep order',
+      tone: 'warning',
+    });
+    if (ok) {
       dispatch(cancelOrder(order.id));
     }
   };

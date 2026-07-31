@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from './hooks/reduxHooks';
+import { ToastHost } from './components/ToastHost';
+import { ConfirmDialogHost } from './components/ui';
+import { ClerkSessionBridge } from './auth/ClerkSessionBridge';
 import { Header } from './components/Header';
 import { CartDrawer } from './components/CartDrawer';
 import { AIFoodAssistant } from './components/AIFoodAssistant';
-import { AuthModal } from './components/AuthModal';
+import { AuthPage } from './pages/AuthPage';
 import { HomePage } from './pages/HomePage';
 import { RestaurantDetailsPage } from './pages/RestaurantDetailsPage';
 import { CheckoutPage } from './pages/CheckoutPage';
@@ -35,15 +36,16 @@ export default function App() {
   const [currentView, setCurrentView] = useState<string>('home');
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
 
-  // Auth modal state for the landing page choices
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalRole, setAuthModalRole] = useState<'customer' | 'owner' | 'admin'>('customer');
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  // Auth is a full-page view rather than an overlay, so the sign-in screen gets
+  // the whole viewport instead of a cramped dialog.
+  const [authRequest, setAuthRequest] = useState<{
+    role: 'customer' | 'owner' | 'admin';
+    mode: 'login' | 'register';
+  } | null>(null);
 
   const openAuth = (role: 'customer' | 'owner' | 'admin', mode: 'login' | 'register' = 'login') => {
-    setAuthModalRole(role);
-    setAuthModalMode(mode);
-    setIsAuthModalOpen(true);
+    setAuthRequest({ role, mode });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   };
 
   const handleNavigate = (view: string) => {
@@ -61,23 +63,56 @@ export default function App() {
     setCurrentView('orders');
   };
 
-  // If user is authenticated as owner or admin, lock view appropriately
-  const effectiveView = isAuthenticated
-    ? user?.role === 'owner'
-      ? 'owner'
-      : user?.role === 'admin'
-      ? 'admin'
-      : currentView
-    : 'landing';
+  // Clear the pending auth request once signed in, so logging out later returns
+  // to the landing page rather than straight back to the sign-in form.
+  useEffect(() => {
+    if (isAuthenticated) setAuthRequest(null);
+  }, [isAuthenticated]);
+
+  /*
+   * Views every signed-in role may open, whatever their portal.
+   *
+   * Previously owner/admin were pinned to their portal unconditionally, so the
+   * shared header's "Profile Settings" and favourites buttons dispatched a
+   * navigation that was then discarded — the controls looked broken because
+   * nothing downstream honoured currentView for those roles.
+   */
+  const SHARED_VIEWS = ['profile', 'wishlist'];
+
+  const homeViewForRole =
+    user?.role === 'owner' ? 'owner' : user?.role === 'admin' ? 'admin' : 'home';
+
+  const effectiveView = !isAuthenticated
+    ? 'landing'
+    : user?.role === 'customer'
+    ? currentView
+    : SHARED_VIEWS.includes(currentView)
+    ? currentView
+    : homeViewForRole;
+
+  // Full-page auth view: deliberately bypasses the app shell (header, centred
+  // main, footer) so the split-screen layout owns the whole viewport. The
+  // global hosts stay mounted so toasts and the Clerk exchange still work here.
+  if (!isAuthenticated && authRequest) {
+    return (
+      <div className="min-h-screen bg-surface-page font-sans text-ink-800 antialiased selection:bg-brand-500 selection:text-white">
+        <ToastHost />
+        <ConfirmDialogHost />
+        <ClerkSessionBridge />
+        <AuthPage
+          defaultRole={authRequest.role}
+          defaultMode={authRequest.mode}
+          onBack={() => setAuthRequest(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] flex flex-col font-sans text-slate-800 antialiased selection:bg-[#FF5200] selection:text-white">
-      <ToastContainer
-        position="top-right"
-        autoClose={3500}
-        theme="colored"
-        aria-label="Notifications"
-      />
+      <ToastHost />
+      <ConfirmDialogHost />
+      <ClerkSessionBridge />
       
       {/* Top Header Navigation (Only shown when authenticated) */}
       {isAuthenticated && <Header currentView={effectiveView} onNavigate={handleNavigate} />}
@@ -123,9 +158,24 @@ export default function App() {
               </>
             )}
 
-            {user?.role === 'owner' && <OwnerPortalPage />}
+            {/* Owner and admin get the same account screens as customers, so
+                profile details and saved favourites are editable from their
+                portals too. Anything else falls back to their own dashboard. */}
+            {user?.role === 'owner' && (
+              <>
+                {effectiveView === 'profile' && <ProfilePage />}
+                {effectiveView === 'wishlist' && <WishlistPage />}
+                {effectiveView === 'owner' && <OwnerPortalPage />}
+              </>
+            )}
 
-            {user?.role === 'admin' && <AdminDashboardPage />}
+            {user?.role === 'admin' && (
+              <>
+                {effectiveView === 'profile' && <ProfilePage />}
+                {effectiveView === 'wishlist' && <WishlistPage />}
+                {effectiveView === 'admin' && <AdminDashboardPage />}
+              </>
+            )}
           </>
         )}
       </main>
@@ -137,14 +187,6 @@ export default function App() {
           <AIFoodAssistant onNavigateCheckout={() => handleNavigate('checkout')} />
         </>
       )}
-
-      {/* Auth Modal Popup */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        defaultRole={authModalRole}
-        defaultMode={authModalMode}
-      />
 
       {/* Global Footer */}
       <footer className="bg-slate-900 text-slate-400 text-xs border-t border-slate-800 mt-16">

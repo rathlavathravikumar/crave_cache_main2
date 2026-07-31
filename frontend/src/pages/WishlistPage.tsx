@@ -7,7 +7,11 @@ import { RestaurantCard } from '../components/RestaurantCard';
 import { FoodCard } from '../components/FoodCard';
 
 interface WishlistPageProps {
-  onSelectRestaurant: (restaurantId: string) => void;
+  /**
+   * Omitted for owner/admin, who have no customer browsing views to navigate
+   * into. Cards then render as non-interactive rather than as dead links.
+   */
+  onSelectRestaurant?: (restaurantId: string) => void;
 }
 
 export const WishlistPage: React.FC<WishlistPageProps> = ({ onSelectRestaurant }) => {
@@ -50,7 +54,9 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onSelectRestaurant }
               <RestaurantCard
                 key={restaurant.id}
                 restaurant={restaurant}
-                onClick={() => onSelectRestaurant(restaurant.id)}
+                onClick={
+                  onSelectRestaurant ? () => onSelectRestaurant(restaurant.id) : undefined
+                }
               />
             ))}
           </div>

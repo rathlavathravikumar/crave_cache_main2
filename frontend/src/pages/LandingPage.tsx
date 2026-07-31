@@ -24,6 +24,7 @@ import {
 import { motion } from 'motion/react';
 import { Restaurant, FoodItem } from '../types';
 import { showToast } from '../utils/toast';
+import { apiFetch } from '../utils/apiBase';
 
 interface LandingPageProps {
   onOpenAuth: (role: 'customer' | 'owner' | 'admin', mode: 'login' | 'register') => void;
@@ -38,7 +39,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
   useEffect(() => {
     // Fetch restaurants and foods for display
-    fetch('/api/restaurants')
+    apiFetch('/api/restaurants')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {

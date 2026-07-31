@@ -6,7 +6,8 @@ import { toggleFavoriteRestaurant } from '../store/slices/wishlistSlice';
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
-  onClick: () => void;
+  /** When omitted the card is presentational — no pointer cue, no dead click. */
+  onClick?: () => void;
 }
 
 export const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant, onClick }) => {
@@ -22,7 +23,21 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant, onCl
   return (
     <div
       onClick={onClick}
-      className="group relative bg-white rounded-2xl overflow-hidden border border-[#E5E7EB] shadow-2xs hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col h-full"
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+      className={`group relative bg-white rounded-2xl overflow-hidden border border-[#E5E7EB] shadow-2xs transition-all duration-300 flex flex-col h-full ${
+        onClick ? 'hover:shadow-lg cursor-pointer' : ''
+      }`}
     >
       {/* Image Container */}
       <div className="relative aspect-16/10 overflow-hidden bg-slate-100">

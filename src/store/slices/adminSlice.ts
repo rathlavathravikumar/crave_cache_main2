@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { User } from '../../types';
+import { apiFetch } from '../../utils/apiBase';
 
 interface AdminState {
   analytics: {
@@ -26,7 +27,7 @@ export const fetchAdminAnalytics = createAsyncThunk(
   'admin/fetchAdminAnalytics',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await fetch('/api/admin/analytics');
+      const res = await apiFetch('/api/admin/analytics');
       const data = await res.json();
       if (!res.ok) return rejectWithValue('Failed to fetch admin analytics');
       return data;
@@ -41,7 +42,7 @@ export const fetchAdminUsers = createAsyncThunk(
   async (search: string | void, { rejectWithValue }) => {
     try {
       const q = search || '';
-      const res = await fetch(`/api/admin/users?search=${encodeURIComponent(q)}`);
+      const res = await apiFetch(`/api/admin/users?search=${encodeURIComponent(q)}`);
       const data = await res.json();
       if (!res.ok) return rejectWithValue('Failed to fetch user list');
       return data;
@@ -55,7 +56,7 @@ export const toggleBlockUser = createAsyncThunk(
   'admin/toggleBlockUser',
   async (userId: string, { rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/admin/users/${userId}/toggle-block`, {
+      const res = await apiFetch(`/api/admin/users/${userId}/toggle-block`, {
         method: 'PUT',
       });
       const data = await res.json();

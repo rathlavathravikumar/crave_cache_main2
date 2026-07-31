@@ -16,6 +16,7 @@ import { useAppDispatch, useAppSelector } from '../hooks/reduxHooks';
 import { fetchRestaurantDetails } from '../store/slices/restaurantSlice';
 import { toggleFavoriteRestaurant } from '../store/slices/wishlistSlice';
 import { FoodCard } from '../components/FoodCard';
+import { apiFetch } from '../utils/apiBase';
 
 interface RestaurantDetailsPageProps {
   restaurantId: string;
@@ -75,7 +76,7 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
     e.preventDefault();
     if (!newComment.trim()) return;
 
-    await fetch('/api/reviews', {
+    await apiFetch('/api/reviews', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

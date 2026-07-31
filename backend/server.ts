@@ -1,13 +1,9 @@
+import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import path from 'path';
 import { GoogleGenAI, Type } from '@google/genai';
-import {
-  INITIAL_RESTAURANTS,
-  INITIAL_FOOD_ITEMS,
-  INITIAL_COUPONS,
-  INITIAL_USERS,
-  INITIAL_REVIEWS,
-} from './data/initialData';
+import { verifyToken, createClerkClient } from '@clerk/backend';
+import { INITIAL_USERS } from './data/initialData';
 import {
   Restaurant,
   FoodItem,
@@ -17,71 +13,107 @@ import {
   Review,
   OrderStatus,
 } from './types';
+import { repo, connectDatabase, isUsingMongo } from './db';
+import {
+  getStripe,
+  isStripeLive,
+  STRIPE_CURRENCY,
+  toMinorUnits,
+  fromMinorUnits,
+  uploadImage,
+  isCloudinaryLive,
+  getPaymentMode,
+} from './db/integrations';
 
-// In-Memory Database Store
-let dbRestaurants: Restaurant[] = [...INITIAL_RESTAURANTS];
-let dbFoodItems: FoodItem[] = [...INITIAL_FOOD_ITEMS];
-let dbCoupons: Coupon[] = [...INITIAL_COUPONS];
-let dbUsers: User[] = [...INITIAL_USERS];
-let dbReviews: Review[] = [...INITIAL_REVIEWS];
-let dbOrders: Order[] = [
-  {
-    id: 'ord_1001',
-    userId: 'usr_customer_1',
-    userName: 'Alex Johnson',
-    userEmail: 'alex@example.com',
-    restaurantId: 'rest_1',
-    restaurantName: 'Pizza Maestro',
-    items: [
-      {
-        cartItemId: 'item_1',
-        foodItem: dbFoodItems[0], // Truffle Mushroom
-        quantity: 1,
-        customizations: [
-          {
-            groupTitle: 'Choose Crust Size',
-            selectedOptions: [{ name: 'Large (12")', price: 80 }],
-          },
-        ],
-        itemTotalPrice: 429,
-      },
-      {
-        cartItemId: 'item_2',
-        foodItem: dbFoodItems[2], // Garlic bread
-        quantity: 1,
-        itemTotalPrice: 149,
-      },
-    ],
-    deliveryAddress: dbUsers[0].addresses[0],
-    itemTotal: 578,
-    deliveryFee: 40,
-    taxAndPackaging: 35,
-    discountAmount: 150,
-    couponCode: 'CRAVE50',
-    totalAmount: 503,
-    status: 'Out for Delivery',
-    paymentMethod: 'Credit/Debit Card',
-    paymentStatus: 'Paid',
-    stripePaymentIntentId: 'pi_3MtwB2LkdOwZnY2g1O214R9w',
-    deliveryDriver: {
-      name: 'Marcus Vance',
-      phone: '+91 98765 12345',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    },
-    timeline: [
-      { status: 'Placed', timestamp: new Date(Date.now() - 25 * 60000).toISOString(), message: 'Order received by restaurant.' },
-      { status: 'Confirmed', timestamp: new Date(Date.now() - 22 * 60000).toISOString(), message: 'Restaurant accepted your order.' },
-      { status: 'Preparing', timestamp: new Date(Date.now() - 15 * 60000).toISOString(), message: 'Chef is preparing fresh ingredients.' },
-      { status: 'Out for Delivery', timestamp: new Date(Date.now() - 5 * 60000).toISOString(), message: 'Driver Marcus Vance is en route to your address.' },
-    ],
-    createdAt: new Date(Date.now() - 25 * 60000).toISOString(),
-    updatedAt: new Date(Date.now() - 5 * 60000).toISOString(),
-  },
+// ==========================================
+// ROLE RESOLUTION (server-authoritative)
+// ==========================================
+// Roles are never taken from the client on the Clerk path. Whoever signs in
+// with Google/GitHub/Microsoft gets the role their email is listed under here,
+// defaulting to 'customer'. Set these in .env, comma-separated.
+const parseEmailList = (raw?: string): string[] =>
+  (raw || '')
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+
+const ADMIN_EMAILS = parseEmailList(process.env.ADMIN_EMAILS);
+const OWNER_EMAILS = parseEmailList(process.env.OWNER_EMAILS);
+
+// Lazily built so the app still boots with no Clerk key configured.
+let _clerk: ReturnType<typeof createClerkClient> | null = null;
+const clerkClient = (secretKey: string) => {
+  if (!_clerk) _clerk = createClerkClient({ secretKey });
+  return _clerk;
+};
+
+const resolveRoleForEmail = (email: string): 'customer' | 'owner' | 'admin' => {
+  const normalized = (email || '').toLowerCase();
+  if (ADMIN_EMAILS.includes(normalized)) return 'admin';
+  if (OWNER_EMAILS.includes(normalized)) return 'owner';
+  // Fall back to the role on a matching seeded account so the demo data
+  // (owner@pizzamaestro.com, admin@cravecache.com) keeps working.
+  const seeded = INITIAL_USERS.find((u) => u.email.toLowerCase() === normalized);
+  return (seeded?.role as 'customer' | 'owner' | 'admin') || 'customer';
+};
+
+const ORDER_STATUSES: OrderStatus[] = [
+  'Placed',
+  'Confirmed',
+  'Preparing',
+  'Out for Delivery',
+  'Delivered',
+  'Cancelled',
 ];
 
 async function startServer() {
+  // Connect before serving so the first request already has the real store.
+  // A connection failure is logged and falls back to memory rather than
+  // preventing the server from booting.
+  await connectDatabase();
+
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+
+  /*
+   * CORS.
+   *
+   * Only needed for the split deployment, where the client is served from a
+   * different origin (e.g. Vercel) than this API (e.g. Render). Same-origin
+   * single-service deployments never trigger a preflight.
+   *
+   * ALLOWED_ORIGINS (comma-separated) takes precedence; FRONTEND_URL is
+   * accepted as a single-value alias. With neither set, and in development,
+   * any origin is allowed so local tooling works.
+   */
+  const allowedOrigins = [
+    ...(process.env.ALLOWED_ORIGINS || '').split(','),
+    process.env.FRONTEND_URL || '',
+  ]
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+
+    if (origin) {
+      const normalised = origin.replace(/\/+$/, '');
+      const permitAll = allowedOrigins.length === 0;
+      if (permitAll || allowedOrigins.includes(normalised)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Vary', 'Origin');
+      }
+    }
+
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Max-Age', '86400');
+
+    // Preflight ends here.
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -97,9 +129,16 @@ async function startServer() {
   // ==========================================
   // AUTHENTICATION ENDPOINTS
   // ==========================================
-  app.post('/api/auth/login', (req: Request, res: Response) => {
+  // Demo (passwordless) login. Kept as a fallback so the app stays usable and
+  // one-click role switching still works, but it is now opt-out-able in
+  // production and no longer rewrites the stored role of a real account.
+  app.post('/api/auth/login', async (req: Request, res: Response) => {
+    if (process.env.ALLOW_DEMO_LOGIN === 'false') {
+      return res.status(403).json({ error: 'Demo login is disabled. Please sign in with Google, GitHub or Microsoft.' });
+    }
+
     const { email, role } = req.body;
-    let user = dbUsers.find((u) => u.email.toLowerCase() === (email || '').toLowerCase());
+    let user = await repo.users.findOne({ email: (email || '').toLowerCase() });
 
     if (!user) {
       // Auto register or login default customer/owner/admin if matching
@@ -124,29 +163,31 @@ async function startServer() {
         ],
         createdAt: new Date().toISOString(),
       };
-      dbUsers.push(user);
-    } else if (role && user.role !== role) {
-      // If role specified during login, ensure match or update for convenience
-      user.role = role;
+      await repo.users.insert(user);
     }
 
     if (user.blocked) {
       return res.status(403).json({ error: 'Your account has been blocked by administrator.' });
     }
 
+    // A requested role only shapes this session's response. Previously this
+    // assignment mutated the stored account, which permanently corrupted the
+    // seeded users (signing in as 'admin' left alex@example.com an admin).
+    const sessionUser = role && user.role !== role ? { ...user, role } : user;
+
     res.json({
       token: `jwt_token_simulated_${user.id}_${Date.now()}`,
-      user,
+      user: sessionUser,
     });
   });
 
-  app.post('/api/auth/register', (req: Request, res: Response) => {
+  app.post('/api/auth/register', async (req: Request, res: Response) => {
     const { name, email, phone, password, role } = req.body;
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and Email are required.' });
     }
 
-    const existing = dbUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const existing = await repo.users.findOne({ email: email.toLowerCase() });
     if (existing) {
       return res.status(400).json({ error: 'User with this email already exists.' });
     }
@@ -174,73 +215,194 @@ async function startServer() {
       createdAt: new Date().toISOString(),
     };
 
-    dbUsers.push(newUser);
+    await repo.users.insert(newUser);
     res.status(201).json({
       token: `jwt_token_simulated_${newUser.id}_${Date.now()}`,
       user: newUser,
     });
   });
 
-  app.get('/api/auth/me', (req: Request, res: Response) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.json({ user: dbUsers[0] }); // Default to customer
+  // ==========================================
+  // CLERK SOCIAL SIGN-IN EXCHANGE
+  // ==========================================
+  // The browser completes OAuth with Clerk (Google / GitHub / Microsoft), then
+  // posts its Clerk session token here. We verify the token server-side, decide
+  // the role from the allowlist above, upsert a CraveCache user, and hand back
+  // the same { token, user } shape the rest of the app already consumes.
+  app.get('/api/auth/clerk/status', (req: Request, res: Response) => {
+    res.json({
+      configured: Boolean(process.env.CLERK_SECRET_KEY),
+      providers: ['google', 'github', 'microsoft'],
+    });
+  });
+
+  app.post('/api/auth/clerk', async (req: Request, res: Response) => {
+    const secretKey = process.env.CLERK_SECRET_KEY;
+    if (!secretKey) {
+      return res.status(503).json({
+        error: 'Clerk is not configured on the server. Set CLERK_SECRET_KEY in .env.',
+      });
     }
-    const token = authHeader.replace('Bearer ', '');
-    const foundUser = dbUsers.find((u) => token.includes(u.id));
-    res.json({ user: foundUser || dbUsers[0] });
+
+    const authHeader = req.headers.authorization || '';
+    const sessionToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+    if (!sessionToken) {
+      return res.status(401).json({ error: 'Missing Clerk session token.' });
+    }
+
+    let claims: any;
+    try {
+      claims = await verifyToken(sessionToken, { secretKey });
+    } catch (err: any) {
+      console.error('[CLERK] Token verification failed:', err?.message || err);
+      return res.status(401).json({ error: 'Invalid or expired Clerk session.' });
+    }
+
+    // The email decides the role, so it must never come from the request body —
+    // a client could otherwise post an allowlisted address and self-promote to
+    // admin. Clerk session tokens carry no email claim by default, so we look
+    // the account up through the Backend API using the verified subject.
+    const profile = req.body?.profile || {};
+    let clerkUser: any;
+    try {
+      clerkUser = await clerkClient(secretKey).users.getUser(claims.sub);
+    } catch (err: any) {
+      console.error('[CLERK] User lookup failed:', err?.message || err);
+      return res.status(502).json({ error: 'Could not load your Clerk profile. Please try again.' });
+    }
+
+    const primaryEmail =
+      clerkUser.emailAddresses?.find((entry: any) => entry.id === clerkUser.primaryEmailAddressId) ||
+      clerkUser.emailAddresses?.[0];
+    const email: string = (primaryEmail?.emailAddress || '').toLowerCase();
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'No email address on this Clerk account. Add one, or grant email scope to the provider.',
+      });
+    }
+
+    const role = resolveRoleForEmail(email);
+    // Name and avatar are cosmetic only, so a client-supplied fallback is fine.
+    const displayName: string =
+      [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') ||
+      clerkUser.username ||
+      profile.name ||
+      email.split('@')[0] ||
+      'CraveCache User';
+    const avatar: string =
+      clerkUser.imageUrl ||
+      profile.avatar ||
+      'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80';
+
+    const existing = await repo.users.findOne({ email });
+    let user: User;
+
+    if (existing) {
+      if (existing.blocked) {
+        return res.status(403).json({ error: 'Your account has been blocked by administrator.' });
+      }
+      // Refresh the profile fields, with the allowlist as the source of truth
+      // for the role.
+      user =
+        (await repo.users.update(existing.id, {
+          name: displayName || existing.name,
+          avatar: avatar || existing.avatar,
+          role,
+        })) || existing;
+    } else {
+      user = {
+        id: `usr_clerk_${claims.sub}`,
+        name: displayName,
+        email,
+        role,
+        avatar,
+        phone: profile.phone || '',
+        addresses: [],
+        createdAt: new Date().toISOString(),
+      };
+      await repo.users.insert(user);
+    }
+
+    console.log(`[CLERK] ${email} signed in as ${role} via ${profile.provider || 'oauth'}`);
+
+    res.json({
+      token: sessionToken,
+      user,
+      roleSource: ADMIN_EMAILS.includes(email)
+        ? 'admin allowlist'
+        : OWNER_EMAILS.includes(email)
+        ? 'owner allowlist'
+        : 'default',
+    });
   });
 
-  app.put('/api/auth/profile', (req: Request, res: Response) => {
-    const { userId, name, email, phone, avatar, role } = req.body;
-    const userIndex = dbUsers.findIndex((u) => u.id === userId || (userId && u.id.includes(userId)));
-    const index = userIndex !== -1 ? userIndex : 0;
-
-    dbUsers[index] = {
-      ...dbUsers[index],
-      name: name || dbUsers[index].name,
-      email: email || dbUsers[index].email,
-      phone: phone || dbUsers[index].phone,
-      avatar: avatar || dbUsers[index].avatar,
-      role: role || dbUsers[index].role,
-    };
-    res.json(dbUsers[index]);
+  app.get('/api/auth/me', async (req: Request, res: Response) => {
+    const authHeader = req.headers.authorization;
+    const token = (authHeader || '').replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ error: 'Not authenticated.' });
+    }
+    // Demo tokens embed the user id as jwt_token_simulated_<id>_<ts>.
+    const users = await repo.users.all();
+    const foundUser = users.find((u) => token.includes(u.id));
+    if (!foundUser) {
+      return res.status(401).json({ error: 'Session not recognised.' });
+    }
+    res.json({ user: foundUser });
   });
 
-  app.put('/api/auth/profile/:id', (req: Request, res: Response) => {
-    const userId = req.params.id;
-    const { name, email, phone, avatar, role } = req.body;
-    const userIndex = dbUsers.findIndex((u) => u.id === userId);
-    const index = userIndex !== -1 ? userIndex : 0;
+  /*
+   * Profile updates.
+   *
+   * Both handlers previously fell back to index 0 when the id did not match,
+   * so a request carrying an unknown id silently rewrote the first account in
+   * the store instead of failing. They now 404.
+   *
+   * A role is never accepted from the request body — roles are decided by the
+   * server (see resolveRoleForEmail), not by whoever is editing a profile.
+   */
+  // Only these four fields are writable; anything else in the body is ignored.
+  const profilePatch = (body: Record<string, any>) => {
+    const patch: Partial<User> = {};
+    for (const field of ['name', 'email', 'phone', 'avatar'] as const) {
+      if (body[field] !== undefined) patch[field] = body[field];
+    }
+    return patch;
+  };
 
-    dbUsers[index] = {
-      ...dbUsers[index],
-      name: name || dbUsers[index].name,
-      email: email || dbUsers[index].email,
-      phone: phone || dbUsers[index].phone,
-      avatar: avatar || dbUsers[index].avatar,
-      role: role || dbUsers[index].role,
-    };
-    res.json(dbUsers[index]);
-  });
+  const updateProfileById = async (id: string, body: Record<string, any>, res: Response) => {
+    const updated = await repo.users.update(id, profilePatch(body));
+    if (!updated) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    res.json(updated);
+  };
 
-  app.put('/api/auth/addresses', (req: Request, res: Response) => {
+  app.put('/api/auth/profile', (req: Request, res: Response) =>
+    updateProfileById(req.body?.userId, req.body || {}, res)
+  );
+
+  app.put('/api/auth/profile/:id', (req: Request, res: Response) =>
+    updateProfileById(req.params.id, req.body || {}, res)
+  );
+
+  app.put('/api/auth/addresses', async (req: Request, res: Response) => {
     const { userId, addresses } = req.body;
-    const index = dbUsers.findIndex((u) => u.id === userId);
-    if (index === -1) {
+    const updated = await repo.users.update(userId, { addresses });
+    if (!updated) {
       return res.status(404).json({ error: 'User not found' });
     }
-    dbUsers[index].addresses = addresses;
-    res.json(dbUsers[index]);
+    res.json(updated);
   });
 
   // ==========================================
   // RESTAURANTS ENDPOINTS
   // ==========================================
-  app.get('/api/restaurants', (req: Request, res: Response) => {
+  app.get('/api/restaurants', async (req: Request, res: Response) => {
     const { search, cuisine, isVeg, maxTime, minRating, sort } = req.query;
 
-    let results = [...dbRestaurants];
+    let results = await repo.restaurants.all();
 
     if (search) {
       const q = (search as string).toLowerCase();
@@ -282,18 +444,22 @@ async function startServer() {
     res.json(results);
   });
 
-  app.get('/api/restaurants/:id', (req: Request, res: Response) => {
-    const restaurant = dbRestaurants.find((r) => r.id === req.params.id || r.slug === req.params.id);
+  app.get('/api/restaurants/:id', async (req: Request, res: Response) => {
+    const key = req.params.id;
+    const restaurant =
+      (await repo.restaurants.findById(key)) || (await repo.restaurants.findOne({ slug: key }));
     if (!restaurant) {
       return res.status(404).json({ error: 'Restaurant not found' });
     }
-    const foods = dbFoodItems.filter((f) => f.restaurantId === restaurant.id);
-    const reviews = dbReviews.filter((rv) => rv.restaurantId === restaurant.id);
+    const [foods, reviews] = await Promise.all([
+      repo.foods.find({ restaurantId: restaurant.id }),
+      repo.reviews.find({ restaurantId: restaurant.id }),
+    ]);
     res.json({ restaurant, foods, reviews });
   });
 
   // Restaurant CRUD Handlers
-  const handleCreateRestaurant = (req: Request, res: Response) => {
+  const handleCreateRestaurant = async (req: Request, res: Response) => {
     const cuisine = Array.isArray(req.body.cuisine)
       ? req.body.cuisine
       : (req.body.cuisine || 'North Indian').split(',').map((c: string) => c.trim());
@@ -318,35 +484,48 @@ async function startServer() {
       phone: req.body.phone || '+91 98765 00000',
       discountOffer: req.body.discountOffer,
     };
-    dbRestaurants.unshift(newRest);
+    await repo.restaurants.insert(newRest);
     res.status(201).json(newRest);
   };
 
-  const handleUpdateRestaurant = (req: Request, res: Response) => {
-    const index = dbRestaurants.findIndex((r) => r.id === req.params.id);
-    if (index === -1) return res.status(404).json({ error: 'Restaurant not found' });
-    
-    let updatedCuisine = dbRestaurants[index].cuisine;
+  const handleUpdateRestaurant = async (req: Request, res: Response) => {
+    const current = await repo.restaurants.findById(req.params.id);
+    if (!current) return res.status(404).json({ error: 'Restaurant not found' });
+
+    let updatedCuisine = current.cuisine;
     if (req.body.cuisine) {
       updatedCuisine = Array.isArray(req.body.cuisine)
         ? req.body.cuisine
         : req.body.cuisine.split(',').map((c: string) => c.trim());
     }
 
-    dbRestaurants[index] = {
-      ...dbRestaurants[index],
-      ...req.body,
+    // `id` is immutable — never let a payload repoint the document.
+    const { id: _ignored, ...patch } = req.body || {};
+
+    const updated = await repo.restaurants.update(current.id, {
+      ...patch,
       cuisine: updatedCuisine,
-      priceForTwo: req.body.priceForTwo !== undefined ? Number(req.body.priceForTwo) : dbRestaurants[index].priceForTwo,
-      deliveryTimeMinutes: req.body.deliveryTimeMinutes !== undefined ? Number(req.body.deliveryTimeMinutes) : dbRestaurants[index].deliveryTimeMinutes,
-    };
-    res.json(dbRestaurants[index]);
+      priceForTwo:
+        req.body.priceForTwo !== undefined ? Number(req.body.priceForTwo) : current.priceForTwo,
+      deliveryTimeMinutes:
+        req.body.deliveryTimeMinutes !== undefined
+          ? Number(req.body.deliveryTimeMinutes)
+          : current.deliveryTimeMinutes,
+    });
+    res.json(updated);
   };
 
-  const handleDeleteRestaurant = (req: Request, res: Response) => {
-    dbRestaurants = dbRestaurants.filter((r) => r.id !== req.params.id);
-    dbFoodItems = dbFoodItems.filter((f) => f.restaurantId !== req.params.id);
-    res.json({ success: true, message: 'Restaurant and items deleted.' });
+  const handleDeleteRestaurant = async (req: Request, res: Response) => {
+    const removed = await repo.restaurants.remove(req.params.id);
+    if (!removed) {
+      return res.status(404).json({ error: 'Restaurant not found' });
+    }
+    // Cascade: the menu belongs to the restaurant.
+    const removedFoods = await repo.foods.removeWhere({ restaurantId: req.params.id });
+    res.json({
+      success: true,
+      message: `Restaurant deleted along with ${removedFoods} menu item(s).`,
+    });
   };
 
   app.post('/api/admin/restaurants', handleCreateRestaurant);
@@ -359,13 +538,14 @@ async function startServer() {
   // ==========================================
   // FOOD ITEMS ENDPOINTS
   // ==========================================
-  const handleGetFoods = (req: Request, res: Response) => {
+  const handleGetFoods = async (req: Request, res: Response) => {
     const { search, category, restaurantId, isVeg, isSpicy, maxPrice } = req.query;
-    let items = [...dbFoodItems];
+    // A restaurantId narrows the query in the database; the remaining optional
+    // criteria are applied to that result set.
+    let items = restaurantId
+      ? await repo.foods.find({ restaurantId: restaurantId as string })
+      : await repo.foods.all();
 
-    if (restaurantId) {
-      items = items.filter((f) => f.restaurantId === restaurantId);
-    }
     if (search) {
       const q = (search as string).toLowerCase();
       items = items.filter(
@@ -396,9 +576,11 @@ async function startServer() {
   app.get('/api/admin/foods', handleGetFoods);
 
   // Food Item CRUD Handlers
-  const handleCreateFood = (req: Request, res: Response) => {
+  const handleCreateFood = async (req: Request, res: Response) => {
     const targetRestId = req.body.restaurantId;
-    const rest = dbRestaurants.find((r) => r.id === targetRestId) || dbRestaurants[0];
+    const rest =
+      (targetRestId ? await repo.restaurants.findById(targetRestId) : null) ||
+      (await repo.restaurants.all())[0];
     const newFood: FoodItem = {
       id: `food_${Date.now()}`,
       restaurantId: rest ? rest.id : (targetRestId || 'rest_1'),
@@ -416,35 +598,40 @@ async function startServer() {
       calories: Number(req.body.calories) || 450,
       customizationGroups: req.body.customizationGroups,
     };
-    dbFoodItems.unshift(newFood);
+    await repo.foods.insert(newFood);
     res.status(201).json(newFood);
   };
 
-  const handleUpdateFood = (req: Request, res: Response) => {
-    const index = dbFoodItems.findIndex((f) => f.id === req.params.id);
-    if (index === -1) return res.status(404).json({ error: 'Food item not found' });
-    
-    let restName = dbFoodItems[index].restaurantName;
+  const handleUpdateFood = async (req: Request, res: Response) => {
+    const current = await repo.foods.findById(req.params.id);
+    if (!current) return res.status(404).json({ error: 'Food item not found' });
+
+    let restName = current.restaurantName;
     if (req.body.restaurantId) {
-      const rest = dbRestaurants.find((r) => r.id === req.body.restaurantId);
+      const rest = await repo.restaurants.findById(req.body.restaurantId);
       if (rest) restName = rest.name;
     }
 
-    dbFoodItems[index] = {
-      ...dbFoodItems[index],
-      ...req.body,
+    const { id: _ignored, ...patch } = req.body || {};
+
+    const updated = await repo.foods.update(current.id, {
+      ...patch,
       restaurantName: restName,
-      price: req.body.price !== undefined ? Number(req.body.price) : dbFoodItems[index].price,
-      isVeg: req.body.isVeg !== undefined ? Boolean(req.body.isVeg) : dbFoodItems[index].isVeg,
-      isSpicy: req.body.isSpicy !== undefined ? Boolean(req.body.isSpicy) : dbFoodItems[index].isSpicy,
-    };
-    res.json(dbFoodItems[index]);
+      price: req.body.price !== undefined ? Number(req.body.price) : current.price,
+      isVeg: req.body.isVeg !== undefined ? Boolean(req.body.isVeg) : current.isVeg,
+      isSpicy: req.body.isSpicy !== undefined ? Boolean(req.body.isSpicy) : current.isSpicy,
+    });
+    res.json(updated);
   };
 
-  const handleDeleteFood = (req: Request, res: Response) => {
+  const handleDeleteFood = async (req: Request, res: Response) => {
     const targetId = req.params.id;
-    const decodedId = decodeURIComponent(targetId);
-    dbFoodItems = dbFoodItems.filter((f) => f.id !== targetId && f.id !== decodedId);
+    const removed =
+      (await repo.foods.remove(targetId)) ||
+      (await repo.foods.remove(decodeURIComponent(targetId)));
+    if (!removed) {
+      return res.status(404).json({ error: 'Food item not found' });
+    }
     res.json({ success: true, message: 'Food item deleted.' });
   };
 
@@ -463,11 +650,11 @@ async function startServer() {
   // ==========================================
   // COUPONS ENDPOINTS
   // ==========================================
-  app.get('/api/coupons', (req: Request, res: Response) => {
-    res.json(dbCoupons.filter((c) => c.isActive));
+  app.get('/api/coupons', async (req: Request, res: Response) => {
+    res.json(await repo.coupons.find({ isActive: true }));
   });
 
-  const handleCreateCoupon = (req: Request, res: Response) => {
+  const handleCreateCoupon = async (req: Request, res: Response) => {
     const newCoupon: Coupon = {
       id: `c_${Date.now()}`,
       code: (req.body.code || 'SAVE20').toUpperCase(),
@@ -479,12 +666,18 @@ async function startServer() {
       isActive: true,
       expiryDate: '2026-12-31',
     };
-    dbCoupons.unshift(newCoupon);
+    await repo.coupons.insert(newCoupon);
     res.status(201).json(newCoupon);
   };
 
-  const handleDeleteCoupon = (req: Request, res: Response) => {
-    dbCoupons = dbCoupons.filter((c) => c.id !== req.params.id && c.code !== req.params.id);
+  const handleDeleteCoupon = async (req: Request, res: Response) => {
+    const key = req.params.id;
+    const removed =
+      (await repo.coupons.remove(key)) ||
+      (await repo.coupons.removeWhere({ code: key.toUpperCase() })) > 0;
+    if (!removed) {
+      return res.status(404).json({ error: 'Coupon not found' });
+    }
     res.json({ success: true, message: 'Coupon deleted.' });
   };
 
@@ -493,15 +686,28 @@ async function startServer() {
   app.delete('/api/coupons/:id', handleDeleteCoupon);
   app.delete('/api/admin/coupons/:id', handleDeleteCoupon);
 
-  app.post('/api/coupons/validate', (req: Request, res: Response) => {
+  app.post('/api/coupons/validate', async (req: Request, res: Response) => {
     const { code, cartAmount } = req.body;
-    const coupon = dbCoupons.find((c) => c.code.toUpperCase() === (code || '').toUpperCase() && c.isActive);
+
+    // Without this guard an absent cartAmount skipped the minimum-value check
+    // and produced discountAmount: NaN, serialised as null.
+    const amount = Number(cartAmount);
+    if (!Number.isFinite(amount) || amount < 0) {
+      return res
+        .status(400)
+        .json({ valid: false, message: 'A valid cart amount is required to apply a coupon.' });
+    }
+
+    const coupon = await repo.coupons.findOne({
+      code: (code || '').toUpperCase(),
+      isActive: true,
+    });
 
     if (!coupon) {
       return res.status(400).json({ valid: false, message: 'Invalid or expired coupon code.' });
     }
 
-    if (cartAmount < coupon.minOrderValue) {
+    if (amount < coupon.minOrderValue) {
       return res.status(400).json({
         valid: false,
         message: `Minimum order value of ₹${coupon.minOrderValue} required for coupon ${coupon.code}.`,
@@ -510,7 +716,7 @@ async function startServer() {
 
     let discount = 0;
     if (coupon.discountType === 'percentage') {
-      discount = (cartAmount * coupon.discountValue) / 100;
+      discount = (amount * coupon.discountValue) / 100;
       if (coupon.maxDiscount && discount > coupon.maxDiscount) {
         discount = coupon.maxDiscount;
       }
@@ -526,46 +732,45 @@ async function startServer() {
     });
   });
 
-  app.post('/api/admin/coupons', (req: Request, res: Response) => {
-    const newCoupon: Coupon = {
-      id: `coup_${Date.now()}`,
-      code: (req.body.code || 'SPECIAL').toUpperCase(),
-      description: req.body.description || 'Special discount offer',
-      discountType: req.body.discountType || 'percentage',
-      discountValue: Number(req.body.discountValue) || 20,
-      minOrderValue: Number(req.body.minOrderValue) || 15,
-      maxDiscount: req.body.maxDiscount ? Number(req.body.maxDiscount) : undefined,
-      isActive: true,
-      expiryDate: req.body.expiryDate || '2026-12-31',
-    };
-    dbCoupons.unshift(newCoupon);
-    res.status(201).json(newCoupon);
-  });
-
-  app.put('/api/admin/coupons/:id', (req: Request, res: Response) => {
-    const index = dbCoupons.findIndex((c) => c.id === req.params.id);
-    if (index === -1) return res.status(404).json({ error: 'Coupon not found' });
-    dbCoupons[index] = { ...dbCoupons[index], ...req.body };
-    res.json(dbCoupons[index]);
-  });
-
-  app.delete('/api/admin/coupons/:id', (req: Request, res: Response) => {
-    dbCoupons = dbCoupons.filter((c) => c.id !== req.params.id);
-    res.json({ success: true });
+  app.put('/api/admin/coupons/:id', async (req: Request, res: Response) => {
+    const { id: _ignored, ...patch } = req.body || {};
+    const updated = await repo.coupons.update(req.params.id, patch);
+    if (!updated) return res.status(404).json({ error: 'Coupon not found' });
+    res.json(updated);
   });
 
   // ==========================================
   // ORDERS ENDPOINTS
   // ==========================================
-  app.post('/api/orders', (req: Request, res: Response) => {
+  app.post('/api/orders', async (req: Request, res: Response) => {
     const { userId, restaurantId, items, deliveryAddress, couponCode, paymentMethod, paymentIntentId } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: 'Cart cannot be empty.' });
     }
 
-    const user = dbUsers.find((u) => u.id === userId) || dbUsers[0];
-    const restaurant = dbRestaurants.find((r) => r.id === restaurantId) || dbRestaurants[0];
+    const user = userId ? await repo.users.findById(userId) : null;
+    const restaurant = restaurantId ? await repo.restaurants.findById(restaurantId) : null;
+
+    if (!user) {
+      return res.status(400).json({ error: 'Unknown user — please sign in again.' });
+    }
+    if (!restaurant) {
+      return res.status(400).json({ error: 'Unknown restaurant for this order.' });
+    }
+
+    /*
+     * Online card payment is the only accepted method, and it is enforced here
+     * rather than only in the UI — otherwise any API caller could create an
+     * order that was never paid for.
+     *
+     * Two accepted methods:
+     *   Cash on Delivery  -> no payment now; the order is created as Pending
+     *   card / online     -> when Stripe is live the intent must exist and have
+     *                        actually succeeded, read from Stripe rather than
+     *                        taken from the request
+     */
+    const isCashOnDelivery = paymentMethod === 'Cash on Delivery';
 
     const itemTotal = items.reduce((acc: number, item: any) => acc + item.itemTotalPrice * item.quantity, 0);
     const deliveryFee = items.length > 0 ? 40 : 0;
@@ -573,7 +778,10 @@ async function startServer() {
 
     let discountAmount = 0;
     if (couponCode) {
-      const coupon = dbCoupons.find((c) => c.code.toUpperCase() === couponCode.toUpperCase() && c.isActive);
+      const coupon = await repo.coupons.findOne({
+        code: couponCode.toUpperCase(),
+        isActive: true,
+      });
       if (coupon && itemTotal >= coupon.minOrderValue) {
         if (coupon.discountType === 'percentage') {
           discountAmount = (itemTotal * coupon.discountValue) / 100;
@@ -585,6 +793,36 @@ async function startServer() {
     }
 
     const totalAmount = Math.max(0, Math.round(itemTotal + deliveryFee + taxAndPackaging - discountAmount));
+
+    /*
+     * Verify the payment now that the authoritative total is known.
+     *
+     * The amount is recomputed server-side above, so a client cannot pay a
+     * small amount and claim a large order.
+     */
+    // Cash orders skip verification: nothing has been charged yet.
+    const stripe = isCashOnDelivery ? null : getStripe();
+    if (stripe) {
+      if (!paymentIntentId) {
+        return res
+          .status(402)
+          .json({ error: 'Payment is required before an order can be placed.' });
+      }
+      try {
+        const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        if (intent.status !== 'succeeded') {
+          return res
+            .status(402)
+            .json({ error: `Payment has not completed (status: ${intent.status}).` });
+        }
+        if (intent.amount < toMinorUnits(totalAmount)) {
+          return res.status(402).json({ error: 'Payment amount does not cover this order.' });
+        }
+      } catch (err: any) {
+        console.error('[STRIPE] order verification failed:', err?.message || err);
+        return res.status(402).json({ error: 'That payment could not be verified.' });
+      }
+    }
 
     const newOrder: Order = {
       id: `ord_${Math.floor(1000 + Math.random() * 9000)}`,
@@ -602,9 +840,12 @@ async function startServer() {
       couponCode,
       totalAmount,
       status: 'Placed',
-      paymentMethod: paymentMethod || 'Stripe Credit/Debit Card',
-      paymentStatus: paymentMethod === 'Cash on Delivery' ? 'Pending' : 'Paid',
-      stripePaymentIntentId: paymentIntentId || `pi_sim_${Date.now()}`,
+      paymentMethod: paymentMethod || 'Credit/Debit Card',
+      // Cash is collected by the driver, so it stays Pending until delivery.
+      paymentStatus: isCashOnDelivery ? 'Pending' : 'Paid',
+      stripePaymentIntentId: isCashOnDelivery
+        ? undefined
+        : paymentIntentId || `pi_sim_${Date.now()}`,
       deliveryDriver: {
         name: 'David Miller',
         phone: '+1 (555) 456-7890',
@@ -621,7 +862,7 @@ async function startServer() {
       updatedAt: new Date().toISOString(),
     };
 
-    dbOrders.unshift(newOrder);
+    await repo.orders.insert(newOrder);
 
     res.status(201).json({
       success: true,
@@ -630,29 +871,32 @@ async function startServer() {
     });
   });
 
-  app.get('/api/orders', (req: Request, res: Response) => {
+  const newestFirst = (a: Order, b: Order) => (a.createdAt < b.createdAt ? 1 : -1);
+
+  app.get('/api/orders', async (req: Request, res: Response) => {
     const { userId, role } = req.query;
-    if (role === 'admin') {
-      return res.json(dbOrders);
-    }
-    const filtered = dbOrders.filter((o) => o.userId === userId || !userId);
-    res.json(filtered);
+    // Admins see everything; a userId narrows the query in the database.
+    const orders =
+      role === 'admin' || !userId
+        ? await repo.orders.all()
+        : await repo.orders.find({ userId: userId as string });
+    res.json(orders.sort(newestFirst));
   });
 
-  app.get('/api/orders/:id', (req: Request, res: Response) => {
-    const order = dbOrders.find((o) => o.id === req.params.id);
+  app.get('/api/orders/:id', async (req: Request, res: Response) => {
+    const order = await repo.orders.findById(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
     res.json(order);
   });
 
-  app.put('/api/orders/:id/status', (req: Request, res: Response) => {
+  app.put('/api/orders/:id/status', async (req: Request, res: Response) => {
     const { status, message } = req.body;
-    const index = dbOrders.findIndex((o) => o.id === req.params.id);
-    if (index === -1) return res.status(404).json({ error: 'Order not found' });
+    const current = await repo.orders.findById(req.params.id);
+    if (!current) return res.status(404).json({ error: 'Order not found' });
 
-    const updatedOrder = { ...dbOrders[index] };
-    updatedOrder.status = status as OrderStatus;
-    updatedOrder.updatedAt = new Date().toISOString();
+    if (!ORDER_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `Unknown order status "${status}".` });
+    }
 
     const timelineMsg =
       message ||
@@ -666,41 +910,64 @@ async function startServer() {
         ? 'Order delivered. Bon Appétit!'
         : 'Order status updated.');
 
-    updatedOrder.timeline.push({
+    const updated = await repo.orders.update(current.id, {
       status: status as OrderStatus,
-      timestamp: new Date().toISOString(),
-      message: timelineMsg,
+      updatedAt: new Date().toISOString(),
+      timeline: [
+        ...current.timeline,
+        {
+          status: status as OrderStatus,
+          timestamp: new Date().toISOString(),
+          message: timelineMsg,
+        },
+      ],
     });
-
-    dbOrders[index] = updatedOrder;
-    res.json(updatedOrder);
+    res.json(updated);
   });
 
-  app.put('/api/orders/:id/cancel', (req: Request, res: Response) => {
-    const index = dbOrders.findIndex((o) => o.id === req.params.id);
-    if (index === -1) return res.status(404).json({ error: 'Order not found' });
+  app.put('/api/orders/:id/cancel', async (req: Request, res: Response) => {
+    const current = await repo.orders.findById(req.params.id);
+    if (!current) return res.status(404).json({ error: 'Order not found' });
 
-    if (dbOrders[index].status === 'Delivered') {
+    if (current.status === 'Delivered') {
       return res.status(400).json({ error: 'Delivered orders cannot be cancelled.' });
     }
+    if (current.status === 'Cancelled') {
+      return res.status(400).json({ error: 'This order is already cancelled.' });
+    }
 
-    dbOrders[index].status = 'Cancelled';
-    dbOrders[index].paymentStatus = 'Refunded';
-    dbOrders[index].updatedAt = new Date().toISOString();
-    dbOrders[index].timeline.push({
+    const updated = await repo.orders.update(current.id, {
       status: 'Cancelled',
-      timestamp: new Date().toISOString(),
-      message: 'Order cancelled and refund initiated.',
+      paymentStatus: 'Refunded',
+      updatedAt: new Date().toISOString(),
+      timeline: [
+        ...current.timeline,
+        {
+          status: 'Cancelled',
+          timestamp: new Date().toISOString(),
+          message: 'Order cancelled and refund initiated.',
+        },
+      ],
     });
 
-    res.json(dbOrders[index]);
+    res.json(updated);
   });
 
   // ==========================================
   // REVIEWS ENDPOINTS
   // ==========================================
-  app.post('/api/reviews', (req: Request, res: Response) => {
+  app.post('/api/reviews', async (req: Request, res: Response) => {
     const { userId, userName, userAvatar, restaurantId, foodItemId, rating, comment } = req.body;
+
+    if (!restaurantId) {
+      return res.status(400).json({ error: 'A restaurantId is required to leave a review.' });
+    }
+
+    const score = Number(rating);
+    if (!Number.isFinite(score) || score < 1 || score > 5) {
+      return res.status(400).json({ error: 'Rating must be a number between 1 and 5.' });
+    }
+
     const newReview: Review = {
       id: `rev_${Date.now()}`,
       userId: userId || 'usr_customer_1',
@@ -708,50 +975,129 @@ async function startServer() {
       userAvatar,
       restaurantId,
       foodItemId,
-      rating: Number(rating) || 5,
-      comment,
+      rating: score,
+      comment: comment || '',
       createdAt: new Date().toISOString(),
     };
-    dbReviews.unshift(newReview);
+    await repo.reviews.insert(newReview);
 
-    // Recalculate restaurant rating
-    const restReviews = dbReviews.filter((r) => r.restaurantId === restaurantId);
-    const avgRating = Number((restReviews.reduce((a, b) => a + b.rating, 0) / restReviews.length).toFixed(1));
-    const restIdx = dbRestaurants.findIndex((r) => r.id === restaurantId);
-    if (restIdx !== -1) {
-      dbRestaurants[restIdx].rating = avgRating;
-      dbRestaurants[restIdx].reviewCount = restReviews.length;
+    // Recalculate the restaurant's aggregate rating from its stored reviews.
+    const restReviews = await repo.reviews.find({ restaurantId });
+    if (restReviews.length > 0) {
+      const avgRating = Number(
+        (restReviews.reduce((a, b) => a + b.rating, 0) / restReviews.length).toFixed(1)
+      );
+      await repo.restaurants.update(restaurantId, {
+        rating: avgRating,
+        reviewCount: restReviews.length,
+      });
     }
 
     res.status(201).json(newReview);
   });
 
   // ==========================================
-  // STRIPE PAYMENT INTENT ENDPOINTS
+  // STRIPE PAYMENT ENDPOINTS
   // ==========================================
-  const handleCreatePaymentIntent = (req: Request, res: Response) => {
-    const { amount, currency = 'inr' } = req.body;
-    const intentId = `pi_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
-    const clientSecret = `${intentId}_secret_${Math.random().toString(36).substring(2, 9)}`;
+  // Real Stripe when STRIPE_SECRET_KEY is set. Without it these fall back to
+  // the previous simulation so the checkout flow stays usable.
+  //
+  // Card details never reach this server: the browser sends them straight to
+  // Stripe via Stripe Elements and only confirms the intent here.
+  const handleCreatePaymentIntent = async (req: Request, res: Response) => {
+    const { amount, currency = STRIPE_CURRENCY, orderRef } = req.body;
 
-    res.json({
-      clientSecret,
-      paymentIntentId: intentId,
-      amount,
-      currency,
-      status: 'requires_payment_method',
-      publishableKey: 'pk_test_simulated_cravecache_stripe_key_2026',
-    });
+    const rupees = Number(amount);
+    if (!Number.isFinite(rupees) || rupees <= 0) {
+      return res.status(400).json({ error: 'A valid payment amount is required.' });
+    }
+
+    const stripe = getStripe();
+
+    if (!stripe) {
+      // --- simulated mode ---
+      const intentId = `pi_sim_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
+      return res.json({
+        simulated: true,
+        clientSecret: `${intentId}_secret_${Math.random().toString(36).substring(2, 9)}`,
+        paymentIntentId: intentId,
+        amount: rupees,
+        currency,
+        status: 'requires_payment_method',
+      });
+    }
+
+    try {
+      const intent = await stripe.paymentIntents.create({
+        amount: toMinorUnits(rupees),
+        currency: String(currency).toLowerCase(),
+        payment_method_types: ['card'],
+        description: orderRef ? `CraveCache order ${orderRef}` : 'CraveCache order',
+        metadata: {
+          app: 'cravecache',
+          orderRef: orderRef || '',
+          amountRupees: String(rupees),
+        },
+      });
+
+      res.json({
+        simulated: false,
+        clientSecret: intent.client_secret,
+        paymentIntentId: intent.id,
+        amount: rupees,
+        currency: intent.currency,
+        status: intent.status,
+      });
+    } catch (err: any) {
+      console.error('[STRIPE] create intent failed:', err?.message || err);
+      res.status(502).json({ error: err?.message || 'Could not start the payment.' });
+    }
   };
 
-  const handleConfirmPayment = (req: Request, res: Response) => {
+  /**
+   * Verifies a payment actually succeeded.
+   *
+   * The status is read back from Stripe rather than trusted from the client —
+   * a browser claiming "succeeded" is not evidence of payment.
+   */
+  const handleConfirmPayment = async (req: Request, res: Response) => {
     const { paymentIntentId } = req.body;
-    res.json({
-      success: true,
-      paymentIntentId,
-      status: 'succeeded',
-      message: 'Payment verified and captured successfully via Stripe.',
-    });
+
+    if (!paymentIntentId) {
+      return res.status(400).json({ error: 'A paymentIntentId is required.' });
+    }
+
+    const stripe = getStripe();
+
+    if (!stripe) {
+      return res.json({
+        simulated: true,
+        success: true,
+        paymentIntentId,
+        status: 'succeeded',
+        message: 'Payment simulated (Stripe is not configured).',
+      });
+    }
+
+    try {
+      const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const success = intent.status === 'succeeded';
+
+      res.status(success ? 200 : 402).json({
+        simulated: false,
+        success,
+        paymentIntentId: intent.id,
+        status: intent.status,
+        amount: fromMinorUnits(intent.amount_received || intent.amount),
+        currency: intent.currency,
+        message: success
+          ? 'Payment captured successfully.'
+          : `Payment not completed (status: ${intent.status}).`,
+      });
+    } catch (err: any) {
+      console.error('[STRIPE] confirm failed:', err?.message || err);
+      res.status(502).json({ error: err?.message || 'Could not verify the payment.' });
+    }
   };
 
   app.post('/api/payments/create-intent', handleCreatePaymentIntent);
@@ -759,40 +1105,91 @@ async function startServer() {
   app.post('/api/payments/confirm', handleConfirmPayment);
   app.post('/api/confirm-payment', handleConfirmPayment);
 
-  // ==========================================
-  // ADMIN ANALYTICS & USER MANAGEMENT
-  // ==========================================
-  app.get('/api/admin/analytics', (req: Request, res: Response) => {
-    const totalRevenue = dbOrders
-      .filter((o) => o.paymentStatus === 'Paid')
-      .reduce((sum, o) => sum + o.totalAmount, 0);
-
-    const totalOrders = dbOrders.length;
-    const totalRestaurants = dbRestaurants.length;
-    const totalUsers = dbUsers.filter((u) => u.role === 'customer').length;
-
-    const statusCounts = {
-      Placed: dbOrders.filter((o) => o.status === 'Placed').length,
-      Confirmed: dbOrders.filter((o) => o.status === 'Confirmed').length,
-      Preparing: dbOrders.filter((o) => o.status === 'Preparing').length,
-      'Out for Delivery': dbOrders.filter((o) => o.status === 'Out for Delivery').length,
-      Delivered: dbOrders.filter((o) => o.status === 'Delivered').length,
-      Cancelled: dbOrders.filter((o) => o.status === 'Cancelled').length,
-    };
-
+  /** Publishable key + mode, so the client knows how to render checkout. */
+  app.get('/api/payments/config', (req: Request, res: Response) => {
     res.json({
-      totalRevenue: Number(totalRevenue.toFixed(2)),
-      totalOrders,
-      totalRestaurants,
-      totalUsers,
-      statusCounts,
-      recentOrders: dbOrders.slice(0, 5),
+      live: isStripeLive(),
+      mode: getPaymentMode(),
+      currency: STRIPE_CURRENCY,
     });
   });
 
-  app.get('/api/admin/users', (req: Request, res: Response) => {
+  // ==========================================
+  // CLOUDINARY IMAGE UPLOAD
+  // ==========================================
+  // Accepts a data URI (what the browser already produces for previews) and
+  // returns a hosted URL. Falls back to echoing the data URI when Cloudinary is
+  // not configured, so image pickers keep working locally.
+  app.post('/api/uploads/image', async (req: Request, res: Response) => {
+    const { image, folder, publicId, maxDimension } = req.body || {};
+
+    if (!image || typeof image !== 'string') {
+      return res.status(400).json({ error: 'An image (data URI or URL) is required.' });
+    }
+
+    // Guard the request-body limit: 10mb of JSON is roughly 7mb of base64.
+    const approxBytes = (image.length * 3) / 4;
+    if (approxBytes > 8 * 1024 * 1024) {
+      return res.status(413).json({ error: 'Image is too large. Please use one under 8MB.' });
+    }
+
+    if (!/^data:image\/|^https?:\/\//.test(image)) {
+      return res.status(400).json({ error: 'Only image data URIs or http(s) URLs are accepted.' });
+    }
+
+    try {
+      const result = await uploadImage(image, {
+        folder: folder || 'cravecache',
+        publicId,
+        maxDimension: maxDimension ? Number(maxDimension) : undefined,
+      });
+      res.json(result);
+    } catch (err: any) {
+      console.error('[CLOUDINARY] upload failed:', err?.message || err);
+      res.status(502).json({ error: err?.message || 'Image upload failed.' });
+    }
+  });
+
+  app.get('/api/uploads/config', (req: Request, res: Response) => {
+    res.json({ live: isCloudinaryLive() });
+  });
+
+  // ==========================================
+  // ADMIN ANALYTICS & USER MANAGEMENT
+  // ==========================================
+  app.get('/api/admin/analytics', async (req: Request, res: Response) => {
+    const [orders, totalRestaurants, totalCustomers, totalUsers] = await Promise.all([
+      repo.orders.all(),
+      repo.restaurants.count(),
+      repo.users.count({ role: 'customer' }),
+      repo.users.count(),
+    ]);
+
+    const totalRevenue = orders
+      .filter((o) => o.paymentStatus === 'Paid')
+      .reduce((sum, o) => sum + o.totalAmount, 0);
+
+    const statusCounts = ORDER_STATUSES.reduce(
+      (acc, status) => ({ ...acc, [status]: orders.filter((o) => o.status === status).length }),
+      {} as Record<OrderStatus, number>
+    );
+
+    res.json({
+      totalRevenue: Number(totalRevenue.toFixed(2)),
+      totalOrders: orders.length,
+      totalRestaurants,
+      // `totalUsers` previously counted customers only while the dashboard
+      // labelled it "Registered Users". Both figures are now reported.
+      totalUsers,
+      totalCustomers,
+      statusCounts,
+      recentOrders: [...orders].sort(newestFirst).slice(0, 5),
+    });
+  });
+
+  app.get('/api/admin/users', async (req: Request, res: Response) => {
     const { search } = req.query;
-    let users = [...dbUsers];
+    let users = await repo.users.all();
     if (search) {
       const q = (search as string).toLowerCase();
       users = users.filter(
@@ -806,12 +1203,12 @@ async function startServer() {
     res.json(users);
   });
 
-  app.post('/api/admin/users', (req: Request, res: Response) => {
+  app.post('/api/admin/users', async (req: Request, res: Response) => {
     const { name, email, phone, role } = req.body;
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and Email are required.' });
     }
-    const existing = dbUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const existing = await repo.users.findOne({ email: email.toLowerCase() });
     if (existing) {
       return res.status(400).json({ error: 'User with this email already exists.' });
     }
@@ -835,52 +1232,51 @@ async function startServer() {
       ],
       createdAt: new Date().toISOString(),
     };
-    dbUsers.unshift(newUser);
+    await repo.users.insert(newUser);
     res.status(201).json(newUser);
   });
 
-  app.put('/api/admin/users/:id/toggle-block', (req: Request, res: Response) => {
-    const targetId = req.params.id;
-    const decodedId = decodeURIComponent(targetId);
-    const index = dbUsers.findIndex((u) => u.id === targetId || u.id === decodedId);
-    if (index === -1) return res.status(404).json({ error: 'User not found' });
-    dbUsers[index].blocked = !dbUsers[index].blocked;
-    res.json(dbUsers[index]);
+  // Ids arrive URL-encoded from some callers, so both forms are tried.
+  const findUserByParam = async (raw: string): Promise<User | null> =>
+    (await repo.users.findById(raw)) || (await repo.users.findById(decodeURIComponent(raw)));
+
+  app.put('/api/admin/users/:id/toggle-block', async (req: Request, res: Response) => {
+    const user = await findUserByParam(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(await repo.users.update(user.id, { blocked: !user.blocked }));
   });
 
-  app.put('/api/admin/users/:id/role', (req: Request, res: Response) => {
-    const targetId = req.params.id;
-    const decodedId = decodeURIComponent(targetId);
-    const index = dbUsers.findIndex((u) => u.id === targetId || u.id === decodedId);
-    if (index === -1) return res.status(404).json({ error: 'User not found' });
-    dbUsers[index].role = req.body.role || (dbUsers[index].role === 'admin' ? 'customer' : 'admin');
-    res.json(dbUsers[index]);
+  app.put('/api/admin/users/:id/role', async (req: Request, res: Response) => {
+    const user = await findUserByParam(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const nextRole = req.body.role || (user.role === 'admin' ? 'customer' : 'admin');
+    if (!['customer', 'owner', 'admin'].includes(nextRole)) {
+      return res.status(400).json({ error: `Unknown role "${nextRole}".` });
+    }
+    res.json(await repo.users.update(user.id, { role: nextRole }));
   });
 
-  app.put('/api/admin/users/:id', (req: Request, res: Response) => {
-    const targetId = req.params.id;
-    const decodedId = decodeURIComponent(targetId);
-    const index = dbUsers.findIndex((u) => u.id === targetId || u.id === decodedId);
-    if (index === -1) return res.status(404).json({ error: 'User not found' });
+  app.put('/api/admin/users/:id', async (req: Request, res: Response) => {
+    const user = await findUserByParam(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    dbUsers[index] = {
-      ...dbUsers[index],
-      name: req.body.name || dbUsers[index].name,
-      email: req.body.email || dbUsers[index].email,
-      phone: req.body.phone || dbUsers[index].phone,
-      role: req.body.role || dbUsers[index].role,
-      blocked: req.body.blocked !== undefined ? Boolean(req.body.blocked) : dbUsers[index].blocked,
-    };
-    res.json(dbUsers[index]);
+    res.json(
+      await repo.users.update(user.id, {
+        name: req.body.name || user.name,
+        email: req.body.email || user.email,
+        phone: req.body.phone || user.phone,
+        role: req.body.role || user.role,
+        blocked: req.body.blocked !== undefined ? Boolean(req.body.blocked) : user.blocked,
+      })
+    );
   });
 
-  app.delete('/api/admin/users/:id', (req: Request, res: Response) => {
-    const targetId = req.params.id;
-    const decodedId = decodeURIComponent(targetId);
-    const index = dbUsers.findIndex((u) => u.id === targetId || u.id === decodedId);
-    if (index === -1) return res.status(404).json({ error: 'User not found' });
+  app.delete('/api/admin/users/:id', async (req: Request, res: Response) => {
+    const user = await findUserByParam(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    dbUsers.splice(index, 1);
+    await repo.users.remove(user.id);
     res.json({ success: true, message: 'User deleted successfully.' });
   });
 
@@ -889,6 +1285,10 @@ async function startServer() {
   // ==========================================
   app.post('/api/recommendations', async (req: Request, res: Response) => {
     const { userId, query, timeOfDay, budget } = req.body;
+
+    // The whole catalogue is the scoring/AI context, so it is loaded once per
+    // request rather than queried per item.
+    const [dbFoodItems, dbOrders] = await Promise.all([repo.foods.all(), repo.orders.all()]);
 
     const currentHour = new Date().getHours();
     let computedTimeOfDay = timeOfDay;
@@ -1053,70 +1453,83 @@ async function startServer() {
   // ==========================================
   // FEATURE 4: RESTAURANT OWNER PORTAL APIS
   // ==========================================
-  const getOwnerRestaurant = (ownerUserId?: string, restId?: string) => {
+  const getOwnerRestaurant = async (
+    ownerUserId?: string,
+    restId?: string
+  ): Promise<Restaurant | null> => {
     if (restId) {
-      const found = dbRestaurants.find((r) => r.id === restId);
+      const found = await repo.restaurants.findById(restId);
       if (found) return found;
     }
     if (ownerUserId) {
-      const user = dbUsers.find((u) => u.id === ownerUserId);
-      if (user && user.restaurantId) {
-        const found = dbRestaurants.find((r) => r.id === user.restaurantId);
+      const user = await repo.users.findById(ownerUserId);
+      if (user?.restaurantId) {
+        const found = await repo.restaurants.findById(user.restaurantId);
         if (found) return found;
       }
-      const foundByOwner = dbRestaurants.find((r) => r.ownerId === ownerUserId);
+      const foundByOwner = await repo.restaurants.findOne({ ownerId: ownerUserId });
       if (foundByOwner) return foundByOwner;
     }
-    return dbRestaurants[0];
+    // Last resort so a demo owner without a linked restaurant still sees data.
+    return (await repo.restaurants.all())[0] || null;
   };
 
-  app.get('/api/owner/my-restaurant', (req: Request, res: Response) => {
-    const ownerId = (req.query.ownerId as string) || (req.query.userId as string) || 'usr_owner_1';
-    const restaurant = getOwnerRestaurant(ownerId, req.query.restaurantId as string);
+  const ownerIdFrom = (req: Request) =>
+    (req.query.ownerId as string) || (req.query.userId as string) || 'usr_owner_1';
+
+  const NO_RESTAURANT = { error: 'No restaurant is linked to this owner account.' };
+
+  app.get('/api/owner/my-restaurant', async (req: Request, res: Response) => {
+    const restaurant = await getOwnerRestaurant(ownerIdFrom(req), req.query.restaurantId as string);
+    if (!restaurant) return res.status(404).json(NO_RESTAURANT);
     res.json(restaurant);
   });
 
-  app.put('/api/owner/my-restaurant', (req: Request, res: Response) => {
+  app.put('/api/owner/my-restaurant', async (req: Request, res: Response) => {
     const { id, name, description, cuisine, phone, address, city, image, bannerImage, isOpen, openingHours, deliveryRadiusKm, discountOffer } = req.body;
-    const targetId = id || 'rest_1';
-    const index = dbRestaurants.findIndex((r) => r.id === targetId);
-    if (index === -1) return res.status(404).json({ error: 'Restaurant not found' });
+    const current = await getOwnerRestaurant(req.body.ownerId, id);
+    if (!current) return res.status(404).json({ error: 'Restaurant not found' });
 
-    dbRestaurants[index] = {
-      ...dbRestaurants[index],
-      name: name || dbRestaurants[index].name,
-      description: description || dbRestaurants[index].description,
-      cuisine: Array.isArray(cuisine) ? cuisine : (cuisine ? cuisine.split(',').map((s: string) => s.trim()) : dbRestaurants[index].cuisine),
-      phone: phone || dbRestaurants[index].phone,
-      address: address || dbRestaurants[index].address,
-      city: city || dbRestaurants[index].city,
-      image: image || dbRestaurants[index].image,
-      bannerImage: bannerImage || dbRestaurants[index].bannerImage,
-      isOpen: isOpen !== undefined ? Boolean(isOpen) : dbRestaurants[index].isOpen,
-      openingHours: openingHours || dbRestaurants[index].openingHours,
-      deliveryRadiusKm: deliveryRadiusKm ? Number(deliveryRadiusKm) : dbRestaurants[index].deliveryRadiusKm,
-      discountOffer: discountOffer !== undefined ? discountOffer : dbRestaurants[index].discountOffer,
-    };
-
-    dbFoodItems.forEach((f) => {
-      if (f.restaurantId === targetId) {
-        f.restaurantName = dbRestaurants[index].name;
-      }
+    const updated = await repo.restaurants.update(current.id, {
+      name: name || current.name,
+      description: description || current.description,
+      cuisine: Array.isArray(cuisine)
+        ? cuisine
+        : cuisine
+        ? cuisine.split(',').map((c: string) => c.trim())
+        : current.cuisine,
+      phone: phone || current.phone,
+      address: address || current.address,
+      city: city || current.city,
+      image: image || current.image,
+      bannerImage: bannerImage || current.bannerImage,
+      isOpen: isOpen !== undefined ? Boolean(isOpen) : current.isOpen,
+      openingHours: openingHours || current.openingHours,
+      deliveryRadiusKm: deliveryRadiusKm ? Number(deliveryRadiusKm) : current.deliveryRadiusKm,
+      discountOffer: discountOffer !== undefined ? discountOffer : current.discountOffer,
     });
 
-    res.json(dbRestaurants[index]);
+    // Menu items denormalise the restaurant name, so keep them consistent.
+    if (updated && updated.name !== current.name) {
+      const menu = await repo.foods.find({ restaurantId: current.id });
+      await Promise.all(
+        menu.map((f) => repo.foods.update(f.id, { restaurantName: updated.name }))
+      );
+    }
+
+    res.json(updated);
   });
 
-  app.get('/api/owner/foods', (req: Request, res: Response) => {
-    const ownerId = (req.query.ownerId as string) || (req.query.userId as string) || 'usr_owner_1';
-    const restaurant = getOwnerRestaurant(ownerId, req.query.restaurantId as string);
-    const foods = dbFoodItems.filter((f) => f.restaurantId === restaurant.id);
-    res.json(foods);
+  app.get('/api/owner/foods', async (req: Request, res: Response) => {
+    const restaurant = await getOwnerRestaurant(ownerIdFrom(req), req.query.restaurantId as string);
+    if (!restaurant) return res.json([]);
+    res.json(await repo.foods.find({ restaurantId: restaurant.id }));
   });
 
-  app.post('/api/owner/foods', (req: Request, res: Response) => {
+  app.post('/api/owner/foods', async (req: Request, res: Response) => {
     const { ownerId, restaurantId, name, description, price, category, isVeg, isSpicy, isBestseller, image, calories } = req.body;
-    const restaurant = getOwnerRestaurant(ownerId, restaurantId);
+    const restaurant = await getOwnerRestaurant(ownerId, restaurantId);
+    if (!restaurant) return res.status(404).json(NO_RESTAURANT);
 
     if (!name || price === undefined) {
       return res.status(400).json({ error: 'Food item name and price are required.' });
@@ -1139,75 +1552,83 @@ async function startServer() {
       calories: calories ? Number(calories) : undefined,
     };
 
-    dbFoodItems.unshift(newFood);
+    await repo.foods.insert(newFood);
     res.status(201).json(newFood);
   });
 
-  app.put('/api/owner/foods/:id', (req: Request, res: Response) => {
-    const targetId = req.params.id;
-    const index = dbFoodItems.findIndex((f) => f.id === targetId);
-    if (index === -1) return res.status(404).json({ error: 'Food item not found' });
+  app.put('/api/owner/foods/:id', async (req: Request, res: Response) => {
+    const current = await repo.foods.findById(req.params.id);
+    if (!current) return res.status(404).json({ error: 'Food item not found' });
 
-    dbFoodItems[index] = {
-      ...dbFoodItems[index],
-      name: req.body.name || dbFoodItems[index].name,
-      description: req.body.description !== undefined ? req.body.description : dbFoodItems[index].description,
-      price: req.body.price !== undefined ? Number(req.body.price) : dbFoodItems[index].price,
-      category: req.body.category || dbFoodItems[index].category,
-      isVeg: req.body.isVeg !== undefined ? Boolean(req.body.isVeg) : dbFoodItems[index].isVeg,
-      isSpicy: req.body.isSpicy !== undefined ? Boolean(req.body.isSpicy) : dbFoodItems[index].isSpicy,
-      isBestseller: req.body.isBestseller !== undefined ? Boolean(req.body.isBestseller) : dbFoodItems[index].isBestseller,
-      isAvailable: req.body.isAvailable !== undefined ? Boolean(req.body.isAvailable) : dbFoodItems[index].isAvailable,
-      image: req.body.image || dbFoodItems[index].image,
-      calories: req.body.calories !== undefined ? Number(req.body.calories) : dbFoodItems[index].calories,
-    };
+    const updated = await repo.foods.update(current.id, {
+      name: req.body.name || current.name,
+      description: req.body.description !== undefined ? req.body.description : current.description,
+      price: req.body.price !== undefined ? Number(req.body.price) : current.price,
+      category: req.body.category || current.category,
+      isVeg: req.body.isVeg !== undefined ? Boolean(req.body.isVeg) : current.isVeg,
+      isSpicy: req.body.isSpicy !== undefined ? Boolean(req.body.isSpicy) : current.isSpicy,
+      isBestseller:
+        req.body.isBestseller !== undefined ? Boolean(req.body.isBestseller) : current.isBestseller,
+      isAvailable:
+        req.body.isAvailable !== undefined ? Boolean(req.body.isAvailable) : current.isAvailable,
+      image: req.body.image || current.image,
+      calories: req.body.calories !== undefined ? Number(req.body.calories) : current.calories,
+    });
 
-    res.json(dbFoodItems[index]);
+    res.json(updated);
   });
 
-  app.delete('/api/owner/foods/:id', (req: Request, res: Response) => {
-    const targetId = req.params.id;
-    const index = dbFoodItems.findIndex((f) => f.id === targetId);
-    if (index === -1) return res.status(404).json({ error: 'Food item not found' });
-
-    dbFoodItems.splice(index, 1);
+  app.delete('/api/owner/foods/:id', async (req: Request, res: Response) => {
+    const removed = await repo.foods.remove(req.params.id);
+    if (!removed) return res.status(404).json({ error: 'Food item not found' });
     res.json({ success: true, message: 'Food item deleted successfully.' });
   });
 
-  app.get('/api/owner/orders', (req: Request, res: Response) => {
-    const ownerId = (req.query.ownerId as string) || (req.query.userId as string) || 'usr_owner_1';
-    const restaurant = getOwnerRestaurant(ownerId, req.query.restaurantId as string);
-    const orders = dbOrders.filter((o) => o.restaurantId === restaurant.id);
-    res.json(orders);
+  app.get('/api/owner/orders', async (req: Request, res: Response) => {
+    const restaurant = await getOwnerRestaurant(ownerIdFrom(req), req.query.restaurantId as string);
+    if (!restaurant) return res.json([]);
+    const orders = await repo.orders.find({ restaurantId: restaurant.id });
+    res.json(orders.sort(newestFirst));
   });
 
-  app.put('/api/owner/orders/:id/status', (req: Request, res: Response) => {
-    const targetId = req.params.id;
+  app.put('/api/owner/orders/:id/status', async (req: Request, res: Response) => {
     const { status, message } = req.body;
-    const order = dbOrders.find((o) => o.id === targetId);
-    if (!order) return res.status(404).json({ error: 'Order not found' });
+    const current = await repo.orders.findById(req.params.id);
+    if (!current) return res.status(404).json({ error: 'Order not found' });
 
-    order.status = status as OrderStatus;
-    order.updatedAt = new Date().toISOString();
-    order.timeline.push({
+    if (!ORDER_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `Unknown order status "${status}".` });
+    }
+
+    const updated = await repo.orders.update(current.id, {
       status: status as OrderStatus,
-      timestamp: new Date().toISOString(),
-      message: message || `Order status updated to ${status} by restaurant staff.`,
+      updatedAt: new Date().toISOString(),
+      timeline: [
+        ...current.timeline,
+        {
+          status: status as OrderStatus,
+          timestamp: new Date().toISOString(),
+          message: message || `Order status updated to ${status} by restaurant staff.`,
+        },
+      ],
     });
 
-    res.json(order);
+    res.json(updated);
   });
 
-  app.get('/api/owner/analytics', (req: Request, res: Response) => {
-    const ownerId = (req.query.ownerId as string) || (req.query.userId as string) || 'usr_owner_1';
-    const restaurant = getOwnerRestaurant(ownerId, req.query.restaurantId as string);
-    const restaurantOrders = dbOrders.filter((o) => o.restaurantId === restaurant.id);
+  app.get('/api/owner/analytics', async (req: Request, res: Response) => {
+    const restaurant = await getOwnerRestaurant(ownerIdFrom(req), req.query.restaurantId as string);
+    if (!restaurant) return res.status(404).json(NO_RESTAURANT);
+
+    const [restaurantOrders, reviews, menuItemsCount] = await Promise.all([
+      repo.orders.find({ restaurantId: restaurant.id }),
+      repo.reviews.find({ restaurantId: restaurant.id }),
+      repo.foods.count({ restaurantId: restaurant.id }),
+    ]);
 
     const totalOrders = restaurantOrders.length;
     const totalRevenue = restaurantOrders.reduce((sum, o) => sum + o.totalAmount, 0);
     const averageOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
-    const reviews = dbReviews.filter((r) => r.restaurantId === restaurant.id);
-    const menuItemsCount = dbFoodItems.filter((f) => f.restaurantId === restaurant.id).length;
 
     res.json({
       restaurantId: restaurant.id,
@@ -1269,6 +1690,14 @@ async function startServer() {
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required for AI Assistant.' });
     }
+
+    // Gemini is given the full menu, restaurant list and active coupons as
+    // grounding context, so all three are loaded once for this request.
+    const [dbFoodItems, dbRestaurants, dbCoupons] = await Promise.all([
+      repo.foods.all(),
+      repo.restaurants.all(),
+      repo.coupons.all(),
+    ]);
 
     try {
       const apiKey = process.env.GEMINI_API_KEY;
@@ -1450,7 +1879,17 @@ ${JSON.stringify(couponsContext, null, 2)}
     res.json({
       status: 'ok',
       service: 'cravecache-backend',
-      timestamp: new Date().toISOString()
+      uptimeSeconds: Math.round(process.uptime()),
+      integrations: {
+        gemini: Boolean(process.env.GEMINI_API_KEY),
+        clerk: Boolean(process.env.CLERK_SECRET_KEY),
+        mongodb: isUsingMongo(),
+        stripe: isStripeLive(),
+        cloudinary: isCloudinaryLive(),
+      },
+      // Makes it obvious whether writes will survive a restart.
+      storage: isUsingMongo() ? 'mongodb' : 'in-memory',
+      timestamp: new Date().toISOString(),
     });
   });
 
