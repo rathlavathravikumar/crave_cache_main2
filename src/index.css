@@ -20,17 +20,20 @@
   --color-brand-800: #8F2D00;
 
   /* Text / ink */
-  --color-ink-900: #111827;
-  --color-ink-800: #1F2937;
-  --color-ink-600: #4B5563;
-  --color-ink-500: #6B7280;
-  --color-ink-400: #9CA3AF;
+  --color-ink-900: #0F1729;
+  --color-ink-800: #1E2939;
+  --color-ink-600: #4A5565;
+  --color-ink-500: #6A7282;
+  --color-ink-400: #99A1AF;
 
-  /* Surfaces */
-  --color-surface-page: #F4F5F7;
+  /* Surfaces. The page is white rather than grey: real delivery apps let the
+     food photography carry the colour and keep the canvas quiet. `warm` is the
+     cream used behind hero and promo bands. */
+  --color-surface-page: #FFFFFF;
   --color-surface-card: #FFFFFF;
-  --color-surface-sunken: #F3F4F6;
-  --color-surface-line: #E5E7EB;
+  --color-surface-sunken: #F6F7F8;
+  --color-surface-line: #E8EAED;
+  --color-surface-warm: #FFF7F1;
 
   /* Semantic status colours */
   --color-success-50: #ECFDF5;
@@ -44,16 +47,46 @@
   --color-info-50: #EFF6FF;
   --color-info-500: #2563EB;
 
-  /* Radii — the app previously mixed lg/xl/2xl arbitrarily */
-  --radius-control: 0.75rem;
-  --radius-card: 1rem;
-  --radius-panel: 1.25rem;
+  /* Ratings get their own green — the delivery-app convention is a solid green
+     pill, distinct from the success/emerald used for state messaging. */
+  --color-rating-500: #1E9E5A;
+  --color-rating-600: #16824A;
 
-  /* Elevation */
-  --shadow-card: 0 1px 2px 0 rgb(17 24 39 / 0.04), 0 1px 3px 0 rgb(17 24 39 / 0.06);
-  --shadow-raised: 0 4px 6px -1px rgb(17 24 39 / 0.07), 0 2px 4px -2px rgb(17 24 39 / 0.05);
-  --shadow-overlay: 0 20px 25px -5px rgb(17 24 39 / 0.12), 0 8px 10px -6px rgb(17 24 39 / 0.08);
-  --shadow-brand: 0 4px 14px 0 rgb(255 82 0 / 0.24);
+  /* Warm gold, used only as the far end of the brand gradient and for accents
+     on the dark AI band. Kept as a token so it can't drift into a second
+     "brand" colour the way #FF6B35 did on the landing page. */
+  --color-accent-gold: #FFD166;
+
+  /* Radii. Tightened: 20-24px on every surface is the strongest visual tell of
+     a generated UI. Cards sit at 14px, controls at 10px. */
+  --radius-control: 0.625rem;
+  --radius-card: 0.875rem;
+  --radius-panel: 1rem;
+
+  /* Elevation — soft and neutral. Coloured glows around buttons were the other
+     main "not designed by a person" signal, so the brand shadow is now faint. */
+  --shadow-card: 0 1px 2px 0 rgb(16 24 40 / 0.04), 0 1px 3px 0 rgb(16 24 40 / 0.03);
+  --shadow-raised: 0 4px 12px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.04);
+  --shadow-overlay: 0 16px 40px -8px rgb(16 24 40 / 0.16), 0 4px 12px -4px rgb(16 24 40 / 0.08);
+  --shadow-brand: 0 2px 8px 0 rgb(255 82 0 / 0.18);
+
+  /* Overlay entrance.
+     `animate-fadeIn` was already referenced by the order tracker and the food
+     customiser, but no such animation was ever defined — the class emitted
+     nothing, so both dialogs snapped in. Defining it here fixes them without
+     touching their markup. `popIn` is the matching panel move. */
+  --animate-fadeIn: fadeIn 0.16s ease-out;
+  --animate-popIn: popIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.97) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
 }
 
 @layer base {
@@ -61,6 +94,33 @@
     background-color: var(--color-surface-page);
     color: var(--color-ink-800);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* Tabular figures keep prices and totals from shifting as digits change. */
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /*
+   * Horizontal-overflow guard. `clip` rather than `hidden` because `hidden`
+   * makes the element a scroll container and silently breaks `position: sticky`
+   * on the header. One stray wide child can no longer produce a page-wide
+   * horizontal scrollbar at 320px.
+   */
+  html,
+  body {
+    overflow-x: clip;
+    max-width: 100%;
+  }
+
+  /* Prices, counts and metrics: same width per digit so columns stay aligned. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Media never escapes its column, whatever the intrinsic size. */
+  img,
+  video,
+  svg {
+    max-width: 100%;
   }
 
   /* Visible, consistent focus ring for keyboard users across the whole app. */
@@ -86,6 +146,256 @@
     }
   }
 }
+
+/* ==========================================================================
+   COMPONENT PRIMITIVES
+
+   Written as plain CSS against the tokens above so a screen can adopt the
+   house style by swapping a long utility string for one class name. That keeps
+   the restyle to small diffs instead of rewriting every element's markup.
+
+   These MUST live in @layer components: Tailwind emits utilities in a later
+   layer, so `class="field pl-11"` resolves the way you'd expect. Unlayered,
+   `.field`'s own padding wins and the leading icon lands on top of the text.
+   ========================================================================== */
+@layer components {
+
+/* --- Layout container ------------------------------------------------------
+   The app previously pinned every screen to max-w-7xl (1280px), which left
+   dead gutters either side from 1440px up. This container is fluid instead:
+   padding grows with the viewport and the cap only engages on genuinely wide
+   displays, so 1440–1680px reads as full-bleed while 4K stays readable rather
+   than stretching a 2500px line of text. */
+.container-app {
+  --container-pad: 1rem;
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--container-pad);
+}
+
+@media (min-width: 640px) {
+  .container-app { --container-pad: 1.5rem; }
+}
+
+@media (min-width: 1024px) {
+  .container-app { --container-pad: 2rem; }
+}
+
+@media (min-width: 1536px) {
+  .container-app { --container-pad: 2.5rem; max-width: 1680px; }
+}
+
+@media (min-width: 1920px) {
+  .container-app { --container-pad: 3rem; max-width: 1800px; }
+}
+
+/* Break a section out to the container's full width (edge-to-edge bands like
+   the hero). Uses the padding variable rather than 100vw, which would overflow
+   by the scrollbar width and create the horizontal scroll we're avoiding. */
+.bleed {
+  margin-inline: calc(-1 * var(--container-pad));
+}
+
+/* --- Buttons -------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-control);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  padding: 0.625rem 1.125rem;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-sm {
+  padding: 0.4375rem 0.875rem;
+  font-size: 0.8125rem;
+}
+
+.btn-lg {
+  padding: 0.8125rem 1.5rem;
+  font-size: 0.9375rem;
+}
+
+.btn-primary {
+  background-color: var(--color-brand-500);
+  color: #fff;
+  box-shadow: var(--shadow-brand);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-brand-600);
+}
+
+.btn-secondary {
+  background-color: var(--color-surface-card);
+  color: var(--color-ink-800);
+  border: 1px solid var(--color-surface-line);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-ink-400);
+  background-color: var(--color-surface-sunken);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-ink-600);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--color-surface-sunken);
+  color: var(--color-ink-900);
+}
+
+/* --- Surfaces ------------------------------------------------------------- */
+.card {
+  background-color: var(--color-surface-card);
+  border: 1px solid var(--color-surface-line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.card-hover {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card-hover:hover {
+  box-shadow: var(--shadow-raised);
+  transform: translateY(-2px);
+}
+
+/* --- Filter chips --------------------------------------------------------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4375rem 0.875rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-surface-line);
+  background-color: var(--color-surface-card);
+  color: var(--color-ink-600);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--color-ink-400);
+  color: var(--color-ink-900);
+}
+
+.chip-active {
+  border-color: var(--color-brand-500);
+  background-color: var(--color-brand-50);
+  color: var(--color-brand-600);
+  font-weight: 600;
+}
+
+/* --- Rating pill ---------------------------------------------------------- */
+.rating-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1875rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.3125rem;
+  background-color: var(--color-rating-500);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.125rem;
+}
+
+/* --- Veg / non-veg mark. The bordered square with a centred dot is the
+       standard Indian FSSAI mark; drawn here so every screen renders it
+       identically instead of re-implementing the nested divs. ------------- */
+.diet-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.1875rem;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+}
+
+.diet-mark::after {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background-color: currentColor;
+}
+
+.diet-veg {
+  color: #0F8A4C;
+}
+
+.diet-nonveg {
+  color: #C0392B;
+}
+
+/* --- Form fields ---------------------------------------------------------- */
+.field {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--color-ink-900);
+  background-color: var(--color-surface-card);
+  border: 1px solid var(--color-surface-line);
+  border-radius: var(--radius-control);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field::placeholder {
+  color: var(--color-ink-400);
+}
+
+.field:focus {
+  border-color: var(--color-brand-500);
+  box-shadow: 0 0 0 3px rgb(255 82 0 / 0.12);
+}
+
+/* --- Section heading ------------------------------------------------------ */
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--color-ink-900);
+}
+
+.section-sub {
+  font-size: 0.8125rem;
+  color: var(--color-ink-500);
+  margin-top: 0.125rem;
+}
+
+/* Horizontal rails (categories, dish rows) scroll without a visible bar. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+}
+/* end @layer components */
 
 /* --------------------------------------------------------------------------
    Legacy helpers — retained so existing markup keeps working while pages are
@@ -179,6 +489,14 @@
   }
 
   .skeleton::after {
+    animation: none;
+  }
+
+  /* The overlay entrances are CSS animations, so they sit outside Motion's
+     `reducedMotion="user"` config and have to opt out here. Dialogs still
+     appear — they just arrive without the move. */
+  .animate-fadeIn,
+  .animate-popIn {
     animation: none;
   }
 }

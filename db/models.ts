@@ -9,7 +9,15 @@
  * matching the interfaces in src/types.ts exactly.
  */
 import { Schema, model, type Model } from 'mongoose';
-import type { Restaurant, FoodItem, Coupon, User, Order, Review } from '../src/types';
+import type {
+  Restaurant,
+  FoodItem,
+  Coupon,
+  User,
+  Order,
+  Review,
+  UserCredential,
+} from '../src/types';
 
 /** Applied to every schema: readable id, no version key, no _id in output. */
 const baseOptions = {
@@ -225,7 +233,57 @@ const CouponSchema = new Schema<Coupon>(
   baseOptions
 );
 
+/* ------------------------------------------------------------ credentials */
+
+/*
+ * Password hashes and reset tokens live in their OWN collection, deliberately
+ * not on the user document.
+ *
+ * The repository projects only `_id`/`__v` away, so any field added to
+ * UserSchema is returned by `repo.users.*` and flows straight out of the eight
+ * handlers that serialise a user — including `GET /api/admin/users`, which
+ * would then ship every account's bcrypt hash to the browser. Keeping secrets
+ * in a sibling collection means no existing endpoint can leak them and no
+ * future one can leak them by forgetting to sanitise.
+ *
+ * `userId` is the app's readable id ('usr_...'), matching how every other
+ * relation in this schema file is expressed.
+ */
+const UserCredentialSchema = new Schema<UserCredential>(
+  {
+    id: { type: String, required: true, unique: true, index: true },
+    userId: { type: String, required: true, unique: true, index: true },
+
+    /** bcrypt hash. Absent for OAuth-only accounts that never set a password. */
+    passwordHash: { type: String, default: null },
+
+    /*
+     * SHA-256 of the reset token, never the token itself. The raw token exists
+     * only in the email we send: a leaked database dump therefore cannot be
+     * used to reset anyone's password. Indexed because lookup is by hash.
+     */
+    resetTokenHash: { type: String, default: null, index: true },
+    resetTokenExpires: { type: Number, default: null },
+
+    /*
+     * Set when a reset completes. Any reset link issued before this instant is
+     * refused, so the older of two concurrently-requested links cannot be
+     * replayed after the newer one has been used.
+     */
+    passwordChangedAt: { type: Number, default: null },
+
+    /** Throttling counters for per-account reset abuse (see rateLimiter.ts). */
+    resetRequestCount: { type: Number, default: 0 },
+    resetRequestWindowStart: { type: Number, default: null },
+  },
+  baseOptions
+);
+
 export const UserModel: Model<User> = model<User>('User', UserSchema);
+export const UserCredentialModel: Model<UserCredential> = model<UserCredential>(
+  'UserCredential',
+  UserCredentialSchema
+);
 export const RestaurantModel: Model<Restaurant> = model<Restaurant>('Restaurant', RestaurantSchema);
 export const FoodItemModel: Model<FoodItem> = model<FoodItem>('FoodItem', FoodItemSchema);
 export const OrderModel: Model<Order> = model<Order>('Order', OrderSchema);

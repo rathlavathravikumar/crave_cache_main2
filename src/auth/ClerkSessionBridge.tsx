@@ -102,16 +102,16 @@ export const isSsoCallbackRoute = () =>
   isClerkConfigured && window.location.pathname === SSO_CALLBACK_PATH;
 
 export const SsoCallbackScreen: React.FC = () => (
-  <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#F4F5F7] p-6">
-    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FF5200] text-xl font-black text-white shadow-lg shadow-[#FF5200]/25">
+  <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-surface-page p-6">
+    <div className="flex h-14 w-14 items-center justify-center rounded-card bg-brand-500 text-xl font-bold text-white shadow-lg shadow-brand-500/25">
       CC
     </div>
     <div className="text-center">
-      <p className="text-sm font-black tracking-tight text-[#1F2937]">Completing sign-in…</p>
-      <p className="mt-1 text-xs font-semibold text-slate-500">Verifying your account with CraveCache</p>
+      <p className="text-sm font-bold tracking-tight text-ink-800">Completing sign-in…</p>
+      <p className="mt-1 text-[13px] font-semibold text-ink-500">Verifying your account with CraveCache</p>
     </div>
     <div className="h-1 w-40 overflow-hidden rounded-full bg-slate-200">
-      <div className="h-full w-1/2 animate-pulse rounded-full bg-[#FF5200]" />
+      <div className="h-full w-1/2 animate-pulse rounded-full bg-brand-500" />
     </div>
     <AuthenticateWithRedirectCallback signInFallbackRedirectUrl="/" signUpFallbackRedirectUrl="/" />
   </div>

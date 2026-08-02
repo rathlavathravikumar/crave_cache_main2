@@ -437,17 +437,17 @@ export const AdminDashboardPage: React.FC = () => {
       
       {/* Role Notice Banner if not admin */}
       {user?.role !== 'admin' && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-panel flex flex-col sm:flex-row items-center justify-between gap-3 shadow-card">
           <div className="flex items-center gap-3">
             <ShieldAlert className="w-6 h-6 text-amber-600 shrink-0" />
             <div>
-              <p className="text-xs font-bold text-amber-900">Current Role: Customer ({user?.name})</p>
-              <p className="text-[11px] text-amber-800">Switch to Admin Mode to manage restaurants, menus, orders, and coupons.</p>
+              <p className="text-[13px] font-bold text-amber-900">Current Role: Customer ({user?.name})</p>
+              <p className="text-[13px] text-amber-800">Switch to Admin Mode to manage restaurants, menus, orders, and coupons.</p>
             </div>
           </div>
           <button
             onClick={handleSwitchToAdmin}
-            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-xs shrink-0 transition-all"
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-[13px] rounded-control shadow-card shrink-0 transition-all"
           >
             Switch to Admin Mode
           </button>
@@ -455,71 +455,71 @@ export const AdminDashboardPage: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-line pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900">Admin Control Center</h1>
-            <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[11px] font-extrabold uppercase">
+            <h1 className="text-2xl font-bold text-ink-900">Admin Control Center</h1>
+            <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[13px] font-semibold uppercase">
               Super Admin
             </span>
           </div>
-          <p className="text-xs text-slate-500">Live platform operations, orders, menu inventory & coupon management</p>
+          <p className="text-[13px] text-ink-500">Live platform operations, orders, menu inventory & coupon management</p>
         </div>
       </div>
 
       {/* Analytics Counter Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+        <div className="bg-white p-5 rounded-panel border border-surface-line/80 shadow-card space-y-2">
+          <div className="flex items-center justify-between text-[13px] font-bold text-ink-500">
             <span>Total Platform Revenue</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-control bg-emerald-100 text-emerald-700 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900">
+          <p className="text-2xl font-bold text-ink-900">
             ₹{(analytics?.totalRevenue || 48500).toLocaleString('en-IN')}
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+        <div className="bg-white p-5 rounded-panel border border-surface-line/80 shadow-card space-y-2">
+          <div className="flex items-center justify-between text-[13px] font-bold text-ink-500">
             <span>Total Orders Placed</span>
-            <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-control bg-brand-100 text-brand-700 flex items-center justify-center">
               <ShoppingBag className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900">
+          <p className="text-2xl font-bold text-ink-900">
             {analytics?.totalOrders || 42}
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+        <div className="bg-white p-5 rounded-panel border border-surface-line/80 shadow-card space-y-2">
+          <div className="flex items-center justify-between text-[13px] font-bold text-ink-500">
             <span>Active Restaurants</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-control bg-blue-100 text-blue-700 flex items-center justify-center">
               <Store className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900">
+          <p className="text-2xl font-bold text-ink-900">
             {restaurants.length || 6}
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+        <div className="bg-white p-5 rounded-panel border border-surface-line/80 shadow-card space-y-2">
+          <div className="flex items-center justify-between text-[13px] font-bold text-ink-500">
             <span>Registered Customers</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-control bg-purple-100 text-purple-700 flex items-center justify-center">
               <Users className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900">
+          <p className="text-2xl font-bold text-ink-900">
             {usersList.length || 18}
           </p>
         </div>
       </div>
 
       {/* Admin Tab Navigation */}
-      <div className="flex gap-2 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar">
+      <div className="flex gap-2 border-b border-surface-line pb-2 overflow-x-auto no-scrollbar">
         {[
           { key: 'orders', label: 'Live Orders Queue', icon: ShoppingBag },
           { key: 'restaurants', label: 'Restaurants', icon: Store },
@@ -533,10 +533,10 @@ export const AdminDashboardPage: React.FC = () => {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all shrink-0 ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-card text-[13px] font-semibold transition-all shrink-0 ${
                 isActive
                   ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                  : 'bg-white text-ink-600 border border-surface-line hover:bg-surface-sunken'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -548,13 +548,13 @@ export const AdminDashboardPage: React.FC = () => {
 
       {/* Tab 1: Live Orders Table */}
       {activeTab === 'orders' && (
-        <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 font-bold text-xs text-slate-900">
+        <div className="bg-white rounded-panel border border-surface-line overflow-hidden shadow-card">
+          <div className="p-4 bg-surface-sunken border-b border-surface-line font-bold text-[13px] text-ink-900">
             Live Platform Orders Queue
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
+            <table className="w-full text-left text-[13px]">
+              <thead className="bg-surface-sunken text-ink-600 font-bold uppercase tracking-wider text-[12px]">
                 <tr>
                   <th className="p-3.5">Order ID</th>
                   <th className="p-3.5">Restaurant</th>
@@ -564,15 +564,15 @@ export const AdminDashboardPage: React.FC = () => {
                   <th className="p-3.5">Change Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+              <tbody className="divide-y divide-slate-100 font-medium text-ink-800">
                 {analytics?.recentOrders?.map((ord: any) => (
-                  <tr key={ord.id} className="hover:bg-slate-50/80">
+                  <tr key={ord.id} className="hover:bg-surface-sunken/80">
                     <td className="p-3.5 font-bold font-mono">#{ord.id}</td>
                     <td className="p-3.5 font-bold">{ord.restaurantName}</td>
-                    <td className="p-3.5 font-black text-orange-600">₹{ord.totalAmount}</td>
+                    <td className="p-3.5 font-bold text-brand-600">₹{ord.totalAmount}</td>
                     <td className="p-3.5">{ord.paymentMethod} ({ord.paymentStatus})</td>
                     <td className="p-3.5">
-                      <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px] uppercase">
+                      <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-bold text-[12px] uppercase">
                         {ord.status}
                       </span>
                     </td>
@@ -580,7 +580,7 @@ export const AdminDashboardPage: React.FC = () => {
                       <select
                         value={ord.status}
                         onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value as OrderStatus)}
-                        className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none cursor-pointer"
+                        className="p-1.5 bg-surface-sunken border border-surface-line rounded-lg text-[13px] font-bold outline-none cursor-pointer"
                       >
                         <option value="Placed">Placed</option>
                         <option value="Confirmed">Confirmed</option>
@@ -602,10 +602,10 @@ export const AdminDashboardPage: React.FC = () => {
       {activeTab === 'restaurants' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="font-bold text-sm text-slate-900">Manage Restaurants ({restaurants.length})</h3>
+            <h3 className="font-bold text-sm text-ink-900">Manage Restaurants ({restaurants.length})</h3>
             <button
               onClick={openAddRestaurantModal}
-              className="py-2 px-3.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5"
+              className="py-2 px-3.5 bg-brand-500 hover:bg-brand-700 text-white font-bold text-[13px] rounded-control shadow-card flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> Add New Restaurant
             </button>
@@ -613,37 +613,37 @@ export const AdminDashboardPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {restaurants.map((rest) => (
-              <div key={rest.id} className="p-4 bg-white rounded-3xl border border-slate-200 shadow-2xs space-y-3">
+              <div key={rest.id} className="p-4 bg-white rounded-panel border border-surface-line shadow-card space-y-3">
                 <div className="flex gap-3 items-center">
-                  <img src={rest.image} alt={rest.name} className="w-16 h-16 rounded-2xl object-cover shrink-0" />
+                  <img src={rest.image} alt={rest.name} className="w-16 h-16 rounded-card object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-extrabold text-sm text-slate-900 truncate">{rest.name}</h4>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      <h4 className="font-semibold text-sm text-ink-900 truncate">{rest.name}</h4>
+                      <span className={`px-2 py-0.5 rounded-full text-[12px] font-bold ${
                         rest.isOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
                       }`}>
                         {rest.isOpen ? 'Open' : 'Closed'}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-500 truncate">{rest.cuisine.join(', ')}</p>
-                    <div className="flex items-center gap-2 mt-1 text-[11px] font-bold">
+                    <p className="text-[13px] text-ink-500 truncate">{rest.cuisine.join(', ')}</p>
+                    <div className="flex items-center gap-2 mt-1 text-[13px] font-bold">
                       <span className="text-emerald-600">★ {rest.rating}</span>
-                      <span className="text-slate-400">•</span>
-                      <span className="text-slate-700">₹{rest.priceForTwo} for two</span>
+                      <span className="text-ink-400">•</span>
+                      <span className="text-ink-600">₹{rest.priceForTwo} for two</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-surface-line">
                   <button
                     onClick={() => openEditRestaurantModal(rest)}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl flex items-center gap-1 transition-colors"
+                    className="px-3 py-1.5 bg-surface-sunken hover:bg-slate-200 text-ink-800 font-bold text-[13px] rounded-control flex items-center gap-1 transition-colors"
                   >
                     <Edit2 className="w-3.5 h-3.5" /> Edit
                   </button>
                   <button
                     onClick={() => handleDeleteRestaurant(rest.id)}
-                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl flex items-center gap-1 transition-colors"
+                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[13px] rounded-control flex items-center gap-1 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Delete
                   </button>
@@ -658,10 +658,10 @@ export const AdminDashboardPage: React.FC = () => {
       {activeTab === 'foods' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="font-bold text-sm text-slate-900">Manage Food Menu Items ({allFoods.length})</h3>
+            <h3 className="font-bold text-sm text-ink-900">Manage Food Menu Items ({allFoods.length})</h3>
             <button
               onClick={openAddFoodModal}
-              className="py-2 px-3.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5"
+              className="py-2 px-3.5 bg-brand-500 hover:bg-brand-700 text-white font-bold text-[13px] rounded-control shadow-card flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> Add Food Item
             </button>
@@ -669,29 +669,29 @@ export const AdminDashboardPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {allFoods.map((f) => (
-              <div key={f.id} className="p-4 bg-white rounded-3xl border border-slate-200 shadow-2xs space-y-3">
+              <div key={f.id} className="p-4 bg-white rounded-panel border border-surface-line shadow-card space-y-3">
                 <div className="flex gap-3 items-center">
-                  <img src={f.image} alt={f.name} className="w-16 h-16 rounded-2xl object-cover shrink-0" />
+                  <img src={f.image} alt={f.name} className="w-16 h-16 rounded-card object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1">
                       <span className={`w-2.5 h-2.5 rounded-full border ${f.isVeg ? 'bg-emerald-600 border-emerald-700' : 'bg-red-600 border-red-700'}`} />
-                      <h4 className="font-extrabold text-sm text-slate-900 truncate">{f.name}</h4>
+                      <h4 className="font-semibold text-sm text-ink-900 truncate">{f.name}</h4>
                     </div>
-                    <p className="text-[11px] text-slate-500">{f.category} • {f.restaurantName}</p>
-                    <span className="text-xs font-black text-orange-600 block mt-0.5">₹{f.price}</span>
+                    <p className="text-[13px] text-ink-500">{f.category} • {f.restaurantName}</p>
+                    <span className="text-[13px] font-bold text-brand-600 block mt-0.5">₹{f.price}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-surface-line">
                   <button
                     onClick={() => openEditFoodModal(f)}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl flex items-center gap-1 transition-colors"
+                    className="px-3 py-1.5 bg-surface-sunken hover:bg-slate-200 text-ink-800 font-bold text-[13px] rounded-control flex items-center gap-1 transition-colors"
                   >
                     <Edit2 className="w-3.5 h-3.5" /> Edit
                   </button>
                   <button
                     onClick={() => handleDeleteFood(f.id)}
-                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl flex items-center gap-1 transition-colors"
+                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[13px] rounded-control flex items-center gap-1 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Delete
                   </button>
@@ -706,10 +706,10 @@ export const AdminDashboardPage: React.FC = () => {
       {activeTab === 'coupons' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="font-bold text-sm text-slate-900">Manage Promotional Coupons</h3>
+            <h3 className="font-bold text-sm text-ink-900">Manage Promotional Coupons</h3>
             <button
               onClick={() => setShowCouponModal(true)}
-              className="py-2 px-3.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5"
+              className="py-2 px-3.5 bg-brand-500 hover:bg-brand-700 text-white font-bold text-[13px] rounded-control shadow-card flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> Create Coupon
             </button>
@@ -717,10 +717,10 @@ export const AdminDashboardPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {coupons.map((c) => (
-              <div key={c.id} className="p-4 bg-amber-50/80 rounded-2xl border border-amber-200 flex items-center justify-between">
+              <div key={c.id} className="p-4 bg-amber-50/80 rounded-card border border-amber-200 flex items-center justify-between">
                 <div>
-                  <span className="font-mono font-black text-amber-900 text-sm block">{c.code}</span>
-                  <span className="text-[11px] text-amber-800">{c.description}</span>
+                  <span className="font-mono font-bold text-amber-900 text-sm block">{c.code}</span>
+                  <span className="text-[13px] text-amber-800">{c.description}</span>
                 </div>
                 <button
                   onClick={() => handleDeleteCoupon(c.id)}
@@ -737,41 +737,41 @@ export const AdminDashboardPage: React.FC = () => {
       {/* Tab 5: Users Directory */}
       {activeTab === 'users' && (
         <div className="space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-200 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-4 rounded-panel border border-surface-line shadow-card">
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+              <h3 className="font-semibold text-sm text-ink-900 flex items-center gap-2">
                 User Directory
-                <span className="bg-orange-100 text-orange-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                <span className="bg-brand-100 text-brand-700 text-[13px] font-bold px-2.5 py-0.5 rounded-full">
                   {usersList.length} registered
                 </span>
               </h3>
-              <p className="text-[11px] text-slate-500">Manage user accounts, roles, access permissions, and profiles.</p>
+              <p className="text-[13px] text-ink-500">Manage user accounts, roles, access permissions, and profiles.</p>
             </div>
 
             <div className="flex items-center gap-2">
               <div className="relative flex-1 md:w-64">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-ink-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search user, email, role..."
                   value={userSearch}
                   onChange={(e) => handleSearchUsers(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:border-orange-500 bg-slate-50 font-medium"
+                  className="w-full pl-9 pr-3 py-2 text-[13px] border border-surface-line rounded-control outline-none focus:border-brand-500 bg-surface-sunken font-medium"
                 />
               </div>
               <button
                 onClick={openAddUserModal}
-                className="py-2 px-3.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
+                className="py-2 px-3.5 bg-brand-500 hover:bg-brand-700 text-white font-bold text-[13px] rounded-control shadow-card flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Add User
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="bg-white rounded-panel border border-surface-line overflow-hidden shadow-card">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/80 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
+              <table className="w-full text-left text-[13px]">
+                <thead className="bg-surface-sunken/80 text-ink-600 font-bold uppercase tracking-wider text-[12px]">
                   <tr>
                     <th className="p-3.5">User Details</th>
                     <th className="p-3.5">Contact Phone</th>
@@ -780,47 +780,47 @@ export const AdminDashboardPage: React.FC = () => {
                     <th className="p-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                <tbody className="divide-y divide-slate-100 font-medium text-ink-800">
                   {usersList.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-slate-400 text-xs font-semibold">
+                      <td colSpan={5} className="p-8 text-center text-ink-400 text-[13px] font-semibold">
                         No users found matching your search query.
                       </td>
                     </tr>
                   ) : (
                     usersList.map((usr) => (
-                      <tr key={usr.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={usr.id} className="hover:bg-surface-sunken/80 transition-colors">
                         <td className="p-3.5">
                           <div className="flex items-center gap-3">
                             {usr.avatar ? (
-                              <img src={usr.avatar} alt={usr.name} className="w-9 h-9 rounded-full object-cover border border-slate-200" />
+                              <img src={usr.avatar} alt={usr.name} className="w-9 h-9 rounded-full object-cover border border-surface-line" />
                             ) : (
-                              <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xs">
+                              <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-[13px]">
                                 {usr.name.slice(0, 2).toUpperCase()}
                               </div>
                             )}
                             <div>
-                              <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                              <div className="font-bold text-ink-900 flex items-center gap-1.5">
                                 {usr.name}
                                 {usr.id === user?.id && (
-                                  <span className="text-[9px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.2 rounded-md">You</span>
+                                  <span className="text-[13px] bg-emerald-100 text-emerald-800 font-semibold px-1.5 py-0.2 rounded-md">You</span>
                                 )}
                               </div>
-                              <div className="text-[11px] text-slate-500">{usr.email}</div>
+                              <div className="text-[13px] text-ink-500">{usr.email}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="p-3.5 text-slate-600 font-mono text-[11px]">{usr.phone || 'N/A'}</td>
+                        <td className="p-3.5 text-ink-600 font-mono text-[13px]">{usr.phone || 'N/A'}</td>
                         <td className="p-3.5">
                           <select
                             value={usr.role}
                             onChange={(e) => handleQuickChangeRole(usr, e.target.value as Role)}
-                            className={`text-[11px] font-bold px-2 py-1 rounded-lg border outline-none cursor-pointer ${
+                            className={`text-[13px] font-bold px-2 py-1 rounded-lg border outline-none cursor-pointer ${
                               usr.role === 'admin'
                                 ? 'bg-purple-100 text-purple-800 border-purple-200'
                                 : usr.role === 'owner'
                                 ? 'bg-amber-100 text-amber-800 border-amber-200'
-                                : 'bg-slate-100 text-slate-700 border-slate-200'
+                                : 'bg-surface-sunken text-ink-600 border-surface-line'
                             }`}
                           >
                             <option value="customer">Customer</option>
@@ -830,11 +830,11 @@ export const AdminDashboardPage: React.FC = () => {
                         </td>
                         <td className="p-3.5">
                           {usr.blocked ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-bold bg-red-100 text-red-700">
                               <XCircle className="w-3 h-3" /> Blocked
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-bold bg-emerald-100 text-emerald-700">
                               <CheckCircle className="w-3 h-3" /> Active
                             </span>
                           )}
@@ -843,14 +843,14 @@ export const AdminDashboardPage: React.FC = () => {
                           <button
                             onClick={() => openEditUserModal(usr)}
                             title="Edit User"
-                            className="p-1.5 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-ink-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors cursor-pointer"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleToggleBlock(usr)}
                             title={usr.blocked ? 'Unblock User' : 'Block User'}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-lg text-[12px] font-bold transition-colors cursor-pointer ${
                               usr.blocked
                                 ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                                 : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
@@ -862,7 +862,7 @@ export const AdminDashboardPage: React.FC = () => {
                             onClick={() => handleDeleteUser(usr.id, usr.name)}
                             disabled={usr.id === user?.id}
                             title={usr.id === user?.id ? 'Cannot delete your own account' : 'Delete User'}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            className="p-1.5 text-ink-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -880,66 +880,66 @@ export const AdminDashboardPage: React.FC = () => {
       {/* Add/Edit Restaurant Modal */}
       {showRestModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl border border-slate-100">
-            <h3 className="font-extrabold text-base text-slate-900">
+          <div className="bg-white rounded-panel p-6 max-w-lg w-full space-y-4 shadow-2xl border border-surface-line">
+            <h3 className="font-semibold text-base text-ink-900">
               {editingRestaurant ? 'Edit Restaurant Details' : 'Add New Restaurant'}
             </h3>
             <form onSubmit={handleSaveRestaurant} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Restaurant Name</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Restaurant Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Royal Punjab Kitchen"
                   value={restName}
                   onChange={(e) => setRestName(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none focus:border-orange-500 font-semibold"
+                  className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none focus:border-brand-500 font-semibold"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Cuisines (comma separated)</label>
+                  <label className="block text-[13px] font-bold text-ink-600 mb-1">Cuisines (comma separated)</label>
                   <input
                     type="text"
                     required
                     placeholder="North Indian, Mughlai"
                     value={restCuisine}
                     onChange={(e) => setRestCuisine(e.target.value)}
-                    className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none"
+                    className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Price for Two (₹)</label>
+                  <label className="block text-[13px] font-bold text-ink-600 mb-1">Price for Two (₹)</label>
                   <input
                     type="number"
                     required
                     value={restPrice}
                     onChange={(e) => setRestPrice(Number(e.target.value))}
-                    className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none font-semibold"
+                    className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none font-semibold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Image URL</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Image URL</label>
                 <input
                   type="text"
                   required
                   value={restImage}
                   onChange={(e) => setRestImage(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none"
+                  className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Address</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Address</label>
                 <input
                   type="text"
                   required
                   value={restAddress}
                   onChange={(e) => setRestAddress(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none"
+                  className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none"
                 />
               </div>
 
@@ -949,9 +949,9 @@ export const AdminDashboardPage: React.FC = () => {
                   id="restIsOpen"
                   checked={restIsOpen}
                   onChange={(e) => setRestIsOpen(e.target.checked)}
-                  className="w-4 h-4 accent-orange-600 rounded cursor-pointer"
+                  className="w-4 h-4 accent-brand-500 rounded cursor-pointer"
                 />
-                <label htmlFor="restIsOpen" className="text-xs font-bold text-slate-700 cursor-pointer">
+                <label htmlFor="restIsOpen" className="text-[13px] font-bold text-ink-600 cursor-pointer">
                   Restaurant Currently Open for Orders
                 </label>
               </div>
@@ -960,13 +960,13 @@ export const AdminDashboardPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowRestModal(false)}
-                  className="flex-1 py-2.5 text-xs border border-slate-200 font-bold rounded-xl text-slate-600 hover:bg-slate-50"
+                  className="flex-1 py-2.5 text-[13px] border border-surface-line font-bold rounded-control text-ink-600 hover:bg-surface-sunken"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md transition-all"
+                  className="flex-1 py-2.5 text-[13px] bg-brand-500 hover:bg-brand-700 text-white font-bold rounded-control shadow-md transition-all"
                 >
                   {editingRestaurant ? 'Update Restaurant' : 'Save Restaurant'}
                 </button>
@@ -979,17 +979,17 @@ export const AdminDashboardPage: React.FC = () => {
       {/* Add/Edit Food Item Modal */}
       {showFoodModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl border border-slate-100">
-            <h3 className="font-extrabold text-base text-slate-900">
+          <div className="bg-white rounded-panel p-6 max-w-lg w-full space-y-4 shadow-2xl border border-surface-line">
+            <h3 className="font-semibold text-base text-ink-900">
               {editingFood ? 'Edit Food Item' : 'Add New Food Item'}
             </h3>
             <form onSubmit={handleSaveFood} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Select Restaurant</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Select Restaurant</label>
                 <select
                   value={foodRestId}
                   onChange={(e) => setFoodRestId(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none font-semibold bg-slate-50"
+                  className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none font-semibold bg-surface-sunken"
                 >
                   {restaurants.map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>
@@ -998,52 +998,52 @@ export const AdminDashboardPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Food Item Name</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Food Item Name</label>
                 <input
                   type="text"
                   required
                   value={foodName}
                   onChange={(e) => setFoodName(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none font-semibold"
+                  className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none font-semibold"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Price (₹)</label>
+                  <label className="block text-[13px] font-bold text-ink-600 mb-1">Price (₹)</label>
                   <input
                     type="number"
                     required
                     value={foodPrice}
                     onChange={(e) => setFoodPrice(Number(e.target.value))}
-                    className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none font-semibold"
+                    className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Category</label>
+                  <label className="block text-[13px] font-bold text-ink-600 mb-1">Category</label>
                   <input
                     type="text"
                     required
                     value={foodCategory}
                     onChange={(e) => setFoodCategory(e.target.value)}
-                    className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none"
+                    className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Image URL</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Image URL</label>
                 <input
                   type="text"
                   required
                   value={foodImage}
                   onChange={(e) => setFoodImage(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none"
+                  className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none"
                 />
               </div>
 
               <div className="flex gap-4 pt-1">
-                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 cursor-pointer">
+                <label className="flex items-center gap-1.5 text-[13px] font-bold text-ink-600 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={foodIsVeg}
@@ -1052,7 +1052,7 @@ export const AdminDashboardPage: React.FC = () => {
                   />
                   Pure Vegetarian
                 </label>
-                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 cursor-pointer">
+                <label className="flex items-center gap-1.5 text-[13px] font-bold text-ink-600 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={foodIsSpicy}
@@ -1067,13 +1067,13 @@ export const AdminDashboardPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowFoodModal(false)}
-                  className="flex-1 py-2.5 text-xs border border-slate-200 font-bold rounded-xl text-slate-600 hover:bg-slate-50"
+                  className="flex-1 py-2.5 text-[13px] border border-surface-line font-bold rounded-control text-ink-600 hover:bg-surface-sunken"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md transition-all"
+                  className="flex-1 py-2.5 text-[13px] bg-brand-500 hover:bg-brand-700 text-white font-bold rounded-control shadow-md transition-all"
                 >
                   {editingFood ? 'Update Food Item' : 'Save Food Item'}
                 </button>
@@ -1086,8 +1086,8 @@ export const AdminDashboardPage: React.FC = () => {
       {/* Add Coupon Modal */}
       {showCouponModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl border border-slate-100">
-            <h3 className="font-extrabold text-base text-slate-900">Create Coupon Code</h3>
+          <div className="bg-white rounded-panel p-6 max-w-md w-full space-y-4 shadow-2xl border border-surface-line">
+            <h3 className="font-semibold text-base text-ink-900">Create Coupon Code</h3>
             <form onSubmit={handleAddCoupon} className="space-y-3">
               <input
                 type="text"
@@ -1095,7 +1095,7 @@ export const AdminDashboardPage: React.FC = () => {
                 placeholder="Coupon Code (e.g. CRAVE30)"
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value)}
-                className="w-full p-2.5 text-xs border rounded-xl font-mono uppercase font-bold"
+                className="w-full p-2.5 text-[13px] border rounded-control font-mono uppercase font-bold"
               />
               <input
                 type="number"
@@ -1103,19 +1103,19 @@ export const AdminDashboardPage: React.FC = () => {
                 placeholder="Discount %"
                 value={couponDiscount}
                 onChange={(e) => setCouponDiscount(parseInt(e.target.value))}
-                className="w-full p-2.5 text-xs border rounded-xl"
+                className="w-full p-2.5 text-[13px] border rounded-control"
               />
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setShowCouponModal(false)}
-                  className="flex-1 py-2 text-xs border rounded-xl font-bold"
+                  className="flex-1 py-2 text-[13px] border rounded-control font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 text-xs bg-orange-600 text-white font-bold rounded-xl"
+                  className="flex-1 py-2 text-[13px] bg-brand-500 text-white font-bold rounded-control"
                 >
                   Create Coupon
                 </button>
@@ -1128,52 +1128,52 @@ export const AdminDashboardPage: React.FC = () => {
       {/* Add/Edit User Modal */}
       {showUserModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl border border-slate-100">
-            <h3 className="font-extrabold text-base text-slate-900">
+          <div className="bg-white rounded-panel p-6 max-w-md w-full space-y-4 shadow-2xl border border-surface-line">
+            <h3 className="font-semibold text-base text-ink-900">
               {editingUser ? 'Edit User Profile' : 'Add New User'}
             </h3>
             <form onSubmit={handleSaveUser} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Full Name</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Full Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Alex Morgan"
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none focus:border-orange-500 font-semibold"
+                  className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none focus:border-brand-500 font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Email Address</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Email Address</label>
                 <input
                   type="email"
                   required
                   placeholder="alex@example.com"
                   value={userEmail}
                   onChange={(e) => setUserEmail(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none focus:border-orange-500 font-semibold"
+                  className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none focus:border-brand-500 font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Phone Number</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Phone Number</label>
                 <input
                   type="text"
                   placeholder="+1 (555) 000-1111"
                   value={userPhone}
                   onChange={(e) => setUserPhone(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none font-semibold"
+                  className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Platform Role</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Platform Role</label>
                 <select
                   value={userRole}
                   onChange={(e) => setUserRole(e.target.value as 'customer' | 'owner' | 'admin')}
-                  className="w-full p-2.5 text-xs border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 cursor-pointer"
+                  className="w-full p-2.5 text-[13px] border border-surface-line rounded-control outline-none font-bold bg-surface-sunken cursor-pointer"
                 >
                   <option value="customer">Customer</option>
                   <option value="owner">Restaurant Owner</option>
@@ -1185,13 +1185,13 @@ export const AdminDashboardPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowUserModal(false)}
-                  className="flex-1 py-2.5 text-xs border border-slate-200 font-bold rounded-xl text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  className="flex-1 py-2.5 text-[13px] border border-surface-line font-bold rounded-control text-ink-600 hover:bg-surface-sunken cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                  className="flex-1 py-2.5 text-[13px] bg-brand-500 hover:bg-brand-700 text-white font-bold rounded-control shadow-md transition-all cursor-pointer"
                 >
                   {editingUser ? 'Update User' : 'Create User'}
                 </button>

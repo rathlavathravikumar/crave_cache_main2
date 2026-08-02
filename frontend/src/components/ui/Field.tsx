@@ -31,7 +31,7 @@ const FieldShell: React.FC<FieldShellProps & { id: string; children: React.React
   children,
 }) => (
   <div className={cn('space-y-1.5', className)}>
-    <label htmlFor={id} className="block text-xs font-bold text-ink-800">
+    <label htmlFor={id} className="block text-[13px] font-bold text-ink-800">
       {label}
       {required && (
         <span className="ml-0.5 text-danger-500" aria-hidden="true">
@@ -47,14 +47,14 @@ const FieldShell: React.FC<FieldShellProps & { id: string; children: React.React
       <p
         id={`${id}-error`}
         role="alert"
-        className="flex items-start gap-1 text-[11px] font-bold text-danger-600"
+        className="flex items-start gap-1 text-[13px] font-bold text-danger-600"
       >
         <AlertCircle className="mt-px h-3 w-3 shrink-0" strokeWidth={2.5} />
         {error}
       </p>
     ) : (
       hint && (
-        <p id={`${id}-hint`} className="text-[11px] font-medium text-ink-400">
+        <p id={`${id}-hint`} className="text-[13px] font-medium text-ink-400">
           {hint}
         </p>
       )

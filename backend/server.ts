@@ -1439,12 +1439,12 @@ async function startServer() {
       aiQuerySummary,
       queryMatchingFoods,
       sections: [
-        { id: 'rec_for_you', title: '✨ Recommended For You', subtitle: 'Personalized based on your orders and taste profile', badge: 'AI Ranked', items: recommendedForYou },
-        { id: 'popular_near', title: '🔥 Popular Near You', subtitle: 'Most ordered by foodies in Springfield', badge: '4.7+ Rating', items: popularNearYou },
-        { id: 'prev_orders', title: '🔁 Based On Previous Orders', subtitle: 'Flavors similar to your top choices', badge: 'Favorites', items: basedOnPreviousOrders.length > 0 ? basedOnPreviousOrders : recommendedForYou.slice(0, 4) },
-        { id: 'trending', title: '📈 Trending Today', subtitle: 'Top requested dishes this week', badge: 'Bestsellers', items: trendingToday },
-        { id: 'healthy', title: '🥗 Healthy & Wholesome', subtitle: 'Nutritious meals & fresh greens', badge: 'Pure Veg', items: healthyChoices },
-        { id: 'budget', title: '💰 Budget Friendly Delights', subtitle: 'Delicious feeds under ₹299', badge: 'Under ₹299', items: budgetFriendly },
+        { id: 'rec_for_you', title: 'Recommended for you', subtitle: 'Personalized based on your orders and taste profile', badge: 'AI Ranked', items: recommendedForYou },
+        { id: 'popular_near', title: 'Popular near you', subtitle: 'Most ordered by foodies in Springfield', badge: '4.7+ Rating', items: popularNearYou },
+        { id: 'prev_orders', title: 'Order again', subtitle: 'Flavors similar to your top choices', badge: 'Favorites', items: basedOnPreviousOrders.length > 0 ? basedOnPreviousOrders : recommendedForYou.slice(0, 4) },
+        { id: 'trending', title: 'Trending today', subtitle: 'Top requested dishes this week', badge: 'Bestsellers', items: trendingToday },
+        { id: 'healthy', title: 'Healthy & wholesome', subtitle: 'Nutritious meals & fresh greens', badge: 'Pure Veg', items: healthyChoices },
+        { id: 'budget', title: 'Under ₹299', subtitle: 'Delicious feeds under ₹299', badge: 'Under ₹299', items: budgetFriendly },
       ],
       frequentlyOrderedTogether,
     });

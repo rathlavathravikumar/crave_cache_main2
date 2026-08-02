@@ -136,13 +136,13 @@ const CardForm: React.FC<StripeCardFormProps> = ({
       </div>
 
       {cardError && (
-        <p role="alert" className="flex items-start gap-1 text-[11px] font-bold text-danger-600">
+        <p role="alert" className="flex items-start gap-1 text-[13px] font-bold text-danger-600">
           <AlertCircle className="mt-px h-3 w-3 shrink-0" strokeWidth={2.5} />
           {cardError}
         </p>
       )}
 
-      <p className="flex items-center gap-1.5 text-[11px] font-semibold text-ink-400">
+      <p className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-400">
         <Lock className="h-3 w-3" />
         Card details go directly to Stripe and never touch our servers.
       </p>

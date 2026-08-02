@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useAppDispatch, useAppSelector } from './hooks/reduxHooks';
 import { ToastHost } from './components/ToastHost';
 import { ConfirmDialogHost } from './components/ui';
@@ -95,6 +96,7 @@ export default function App() {
   // global hosts stay mounted so toasts and the Clerk exchange still work here.
   if (!isAuthenticated && authRequest) {
     return (
+      <MotionConfig reducedMotion="user">
       <div className="min-h-screen bg-surface-page font-sans text-ink-800 antialiased selection:bg-brand-500 selection:text-white">
         <ToastHost />
         <ConfirmDialogHost />
@@ -105,20 +107,37 @@ export default function App() {
           onBack={() => setAuthRequest(null)}
         />
       </div>
+      </MotionConfig>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] flex flex-col font-sans text-slate-800 antialiased selection:bg-[#FF5200] selection:text-white">
+    /* `reducedMotion="user"` makes every motion component below defer to the
+       OS "reduce motion" setting, so the transitions never fight an
+       accessibility preference. */
+    <MotionConfig reducedMotion="user">
+    <div className="min-h-screen bg-surface-page flex flex-col font-sans text-ink-800 antialiased selection:bg-brand-500 selection:text-white">
       <ToastHost />
       <ConfirmDialogHost />
       <ClerkSessionBridge />
-      
+
       {/* Top Header Navigation (Only shown when authenticated) */}
       {isAuthenticated && <Header currentView={effectiveView} onNavigate={handleNavigate} />}
 
-      {/* Main Content Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      {/* Main Content Body.
+          Keyed on the resolved view so switching screens cross-fades instead of
+          snapping. `mode="wait"` lets the outgoing screen finish before the
+          incoming one mounts, which avoids the two stacking and doubling the
+          page height mid-transition. */}
+      <main className="flex-1 container-app pt-6">
+        <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={effectiveView}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
         {!isAuthenticated ? (
           <LandingPage onOpenAuth={openAuth} />
         ) : (
@@ -178,6 +197,8 @@ export default function App() {
             )}
           </>
         )}
+        </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Global Slide-Over Drawers & Modals */}
@@ -189,42 +210,52 @@ export default function App() {
       )}
 
       {/* Global Footer */}
-      <footer className="bg-slate-900 text-slate-400 text-xs border-t border-slate-800 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-slate-800">
-            
+      <footer className="bg-ink-900 text-slate-400 border-t border-slate-800 mt-20">
+        <div className="container-app py-14">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 pb-10 border-b border-white/10">
+
             {/* Brand Column */}
-            <div className="space-y-3">
+            <div className="col-span-2 lg:col-span-1">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-[#FF5200] flex items-center justify-center text-white font-black shadow-md">
-                  <UtensilsCrossed className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-[10px] bg-brand-500 flex items-center justify-center text-white">
+                  <UtensilsCrossed className="w-[18px] h-[18px]" />
                 </div>
-                <span className="text-lg font-black text-white">
-                  Crave<span className="text-[#FF5200]">Cache</span>
+                <span className="text-[17px] font-bold text-white tracking-tight">
+                  Crave<span className="text-brand-500">Cache</span>
                 </span>
               </div>
-              <p className="text-slate-400 text-xs leading-relaxed">
-                Next-generation multi-role food ordering platform with strict role isolation & AI curation.
+              <p className="mt-3 text-[13px] leading-relaxed text-slate-400 max-w-xs">
+                AI-assisted food ordering with separate portals for customers, restaurant
+                owners and administrators.
               </p>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-3">Independent Portals</h4>
-              <ul className="space-y-2 font-medium">
+              <h4 className="text-[13px] font-semibold text-white mb-3.5">Portals</h4>
+              <ul className="space-y-2.5 text-[13px]">
                 <li>
-                  <button onClick={() => openAuth('customer', 'login')} className="hover:text-orange-400 transition-colors">
-                    Customer Portal
+                  <button
+                    onClick={() => openAuth('customer', 'login')}
+                    className="hover:text-white transition-colors"
+                  >
+                    Customer
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => openAuth('owner', 'login')} className="hover:text-orange-400 transition-colors">
-                    Restaurant Owner Portal
+                  <button
+                    onClick={() => openAuth('owner', 'login')}
+                    className="hover:text-white transition-colors"
+                  >
+                    Restaurant owner
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => openAuth('admin', 'login')} className="hover:text-orange-400 transition-colors">
-                    Super Admin Center
+                  <button
+                    onClick={() => openAuth('admin', 'login')}
+                    className="hover:text-white transition-colors"
+                  >
+                    Super admin
                   </button>
                 </li>
               </ul>
@@ -232,42 +263,41 @@ export default function App() {
 
             {/* AI Assistant Features */}
             <div>
-              <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-3">AI Curation</h4>
-              <ul className="space-y-2 font-medium">
-                <li className="flex items-center gap-1.5 text-amber-300">
-                  <Sparkles className="w-3.5 h-3.5" /> Natural Language Order Prompt
-                </li>
-                <li>Instant Coupon Auto-Application</li>
-                <li>Dietary Filter (Spicy / Veg / Halal)</li>
+              <h4 className="text-[13px] font-semibold text-white mb-3.5">AI features</h4>
+              <ul className="space-y-2.5 text-[13px]">
+                <li>Natural-language ordering</li>
+                <li>Personalised recommendations</li>
+                <li>Automatic coupon matching</li>
               </ul>
             </div>
 
             {/* Payment & Security */}
             <div>
-              <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-3">Security & Trust</h4>
-              <p className="text-slate-400 text-xs mb-3">
-                100% Secure Checkout powered by Stripe PCI-DSS Level 1 Encryption.
+              <h4 className="text-[13px] font-semibold text-white mb-3.5">Security</h4>
+              <p className="text-[13px] leading-relaxed mb-3">
+                Card details are entered in Stripe's own iframe and never touch our servers.
               </p>
-              <div className="flex items-center gap-2 font-bold text-emerald-400 bg-emerald-950/50 p-2.5 rounded-xl border border-emerald-800/50">
+              <div className="inline-flex items-center gap-2 text-[13px] font-medium text-emerald-400">
                 <ShieldCheck className="w-4 h-4 shrink-0" />
-                <span>Verified Merchant & RBAC</span>
+                <span>Stripe secured</span>
               </div>
             </div>
 
           </div>
 
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-[11px]">
-            <p>© 2026 CraveCache Inc. All rights reserved. Built with React 19, Express, Tailwind CSS & Gemini AI SDK.</p>
-            <div className="flex gap-4">
-              <span className="hover:text-slate-300 cursor-pointer">Privacy Policy</span>
-              <span className="hover:text-slate-300 cursor-pointer">Terms of Service</span>
-              <span className="hover:text-slate-300 cursor-pointer">Security</span>
+          <div className="pt-7 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-slate-500">
+            <p>© 2026 CraveCache. All rights reserved.</p>
+            <div className="flex gap-5">
+              <button className="hover:text-slate-300 transition-colors">Privacy</button>
+              <button className="hover:text-slate-300 transition-colors">Terms</button>
+              <button className="hover:text-slate-300 transition-colors">Security</button>
             </div>
           </div>
         </div>
       </footer>
 
     </div>
+    </MotionConfig>
   );
 }
 

@@ -240,14 +240,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <div className="flex h-10 w-10 items-center justify-center rounded-control bg-brand-500 text-white shadow-brand">
               <UtensilsCrossed className="h-5 w-5" strokeWidth={2.5} />
             </div>
-            <span className="text-lg font-black tracking-tight text-white">
+            <span className="text-lg font-bold tracking-tight text-white">
               Crave<span className="text-brand-500">Cache</span>
             </span>
           </div>
         </div>
 
         <div className="relative max-w-md">
-          <h1 className="text-3xl font-black leading-tight tracking-tight text-white xl:text-4xl">
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-white xl:text-4xl">
             Food ordering, with an AI that actually knows the menu.
           </h1>
           <p className="mt-4 text-sm font-medium leading-relaxed text-white/60">
@@ -263,7 +263,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 </div>
                 <div>
                   <p className="text-sm font-bold text-white">{title}</p>
-                  <p className="mt-0.5 text-xs font-medium leading-relaxed text-white/50">{copy}</p>
+                  <p className="mt-0.5 text-[13px] font-medium leading-relaxed text-white/50">{copy}</p>
                 </div>
               </li>
             ))}
@@ -277,8 +277,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             { value: '3', label: 'Portals' },
           ].map((stat) => (
             <div key={stat.label}>
-              <p className="text-xl font-black tracking-tight text-white">{stat.value}</p>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-white/40">
+              <p className="text-xl font-bold tracking-tight text-white">{stat.value}</p>
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-white/40">
                 {stat.label}
               </p>
             </div>
@@ -294,7 +294,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <div className="flex h-9 w-9 items-center justify-center rounded-control bg-brand-500 text-white shadow-brand">
               <UtensilsCrossed className="h-4 w-4" strokeWidth={2.5} />
             </div>
-            <span className="text-base font-black tracking-tight text-ink-900">
+            <span className="text-base font-bold tracking-tight text-ink-900">
               Crave<span className="text-brand-500">Cache</span>
             </span>
           </div>
@@ -302,14 +302,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           <button
             type="button"
             onClick={onBack}
-            className="mb-6 inline-flex items-center gap-1.5 text-xs font-bold text-ink-500 transition-colors hover:text-ink-900"
+            className="mb-6 inline-flex items-center gap-1.5 text-[13px] font-bold text-ink-500 transition-colors hover:text-ink-900"
           >
             <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2.5} />
             Back to home
           </button>
 
           <header>
-            <h2 className="text-2xl font-black tracking-tight text-ink-900">
+            <h2 className="text-2xl font-bold tracking-tight text-ink-900">
               {isRegister ? 'Create your account' : 'Sign in to CraveCache'}
             </h2>
             <p className="mt-1.5 text-sm font-medium text-ink-500">
@@ -321,7 +321,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
           {/* ---------------- Role picker ---------------- */}
           <fieldset className="mt-7">
-            <legend className="mb-2 text-xs font-bold text-ink-800">
+            <legend className="mb-2 text-[13px] font-bold text-ink-800">
               I&rsquo;m signing in as
             </legend>
             <div className="grid grid-cols-3 gap-2.5" role="radiogroup" aria-label="Account type">
@@ -353,13 +353,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     <span className="min-w-0">
                       <span
                         className={cn(
-                          'block text-xs font-black tracking-tight',
+                          'block text-[13px] font-bold tracking-tight',
                           selected ? 'text-brand-700' : 'text-ink-900'
                         )}
                       >
                         {option.label}
                       </span>
-                      <span className="mt-0.5 block text-[10px] font-semibold leading-tight text-ink-500">
+                      <span className="mt-0.5 block text-[12px] font-semibold leading-tight text-ink-500">
                         {option.blurb}
                       </span>
                     </span>
@@ -385,7 +385,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
           <div className="my-6 flex items-center gap-3">
             <span className="h-px flex-1 bg-surface-line" />
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-ink-400">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-ink-400">
               or continue with email
             </span>
             <span className="h-px flex-1 bg-surface-line" />
@@ -471,7 +471,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             {serverError && (
               <p
                 role="alert"
-                className="rounded-control border border-danger-500/25 bg-danger-50 px-3 py-2.5 text-xs font-bold text-danger-600"
+                className="rounded-control border border-danger-500/25 bg-danger-50 px-3 py-2.5 text-[13px] font-bold text-danger-600"
               >
                 {serverError}
               </p>
@@ -490,14 +490,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </form>
 
           {/* ---------------- Mode switch ---------------- */}
-          <p className="mt-6 text-center text-xs font-semibold text-ink-500">
+          <p className="mt-6 text-center text-[13px] font-semibold text-ink-500">
             {isRegister ? (
               <>
                 Already have an account?{' '}
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
-                  className="font-black text-brand-600 hover:underline"
+                  className="font-bold text-brand-600 hover:underline"
                 >
                   Sign in
                 </button>
@@ -508,7 +508,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <button
                   type="button"
                   onClick={() => switchMode('register')}
-                  className="font-black text-brand-600 hover:underline"
+                  className="font-bold text-brand-600 hover:underline"
                 >
                   Create an account
                 </button>
@@ -520,7 +520,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             )}
           </p>
 
-          <p className="mt-8 text-center text-[11px] font-medium leading-relaxed text-ink-400">
+          <p className="mt-8 text-center text-[13px] font-medium leading-relaxed text-ink-400">
             Demo credentials are pre-filled for the selected portal. Roles for social sign-in are
             assigned server-side from your email address.
           </p>

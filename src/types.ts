@@ -13,6 +13,28 @@ export interface User {
   createdAt: string;
 }
 
+/**
+ * Authentication secrets for a user, stored in their own collection.
+ *
+ * Never sent to the browser and never merged into `User` — see the comment on
+ * UserCredentialSchema in db/models.ts for why they are kept apart.
+ *
+ * Timestamps are epoch milliseconds (`Date.now()`) rather than the ISO strings
+ * used elsewhere, because every use here is an arithmetic comparison.
+ */
+export interface UserCredential {
+  id: string;
+  userId: string;
+  /** bcrypt hash, or null for an OAuth-only account with no password set. */
+  passwordHash: string | null;
+  /** SHA-256 of the emailed reset token. The raw token is never stored. */
+  resetTokenHash: string | null;
+  resetTokenExpires: number | null;
+  passwordChangedAt: number | null;
+  resetRequestCount: number;
+  resetRequestWindowStart: number | null;
+}
+
 export interface Address {
   id: string;
   title: string; // e.g. "Home", "Work", "Other"

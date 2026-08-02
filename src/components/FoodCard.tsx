@@ -76,121 +76,112 @@ export const FoodCard: React.FC<FoodCardProps> = ({ foodItem }) => {
 
   return (
     <>
-      <div className="bg-white rounded-2xl p-4 border border-[#E5E7EB] shadow-2xs hover:shadow-md transition-all flex gap-4 relative group">
-        
+      <div className="bg-white rounded-card p-4 border border-surface-line shadow-card hover:shadow-raised transition-shadow flex gap-4 relative group">
+
         {/* Left Side: Text Info */}
-        <div className="flex-1 flex flex-col justify-between">
-          <div>
-            {/* Badges & Tags */}
-            <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-              {/* Veg / Non-Veg Indicator Dot */}
-              <div
-                className={`w-4 h-4 border flex items-center justify-center rounded-sm shrink-0 ${
-                  foodItem.isVeg ? 'border-emerald-600' : 'border-rose-600'
-                }`}
-                title={foodItem.isVeg ? 'Pure Vegetarian' : 'Non-Vegetarian'}
-              >
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    foodItem.isVeg ? 'bg-emerald-600' : 'bg-rose-600'
-                  }`}
-                />
-              </div>
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* Badges & Tags */}
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span
+              className={`diet-mark ${foodItem.isVeg ? 'diet-veg' : 'diet-nonveg'}`}
+              title={foodItem.isVeg ? 'Vegetarian' : 'Non-vegetarian'}
+            />
 
-              {foodItem.matchScore && (
-                <span className="px-2 py-0.5 rounded-md bg-orange-100 text-orange-800 text-[10px] font-black tracking-wide flex items-center gap-1 border border-orange-200">
-                  <Sparkles className="w-3 h-3 text-[#FF5200]" />
-                  {foodItem.matchScore}% Match
-                </span>
-              )}
-
-              {foodItem.isBestseller && (
-                <span className="px-2 py-0.5 rounded-md bg-[#ECFDF5] text-[#059669] text-[10px] font-extrabold uppercase tracking-wide">
-                  ⭐ Bestseller
-                </span>
-              )}
-
-              {foodItem.isSpicy && (
-                <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-extrabold uppercase tracking-wide flex items-center gap-0.5">
-                  <Flame className="w-3 h-3 text-rose-600" /> Spicy
-                </span>
-              )}
-            </div>
-
-            {foodItem.recommendationReason && (
-              <p className="text-[10px] font-bold text-orange-600/90 mb-1 flex items-center gap-1 bg-orange-50/80 px-2 py-0.5 rounded-md w-fit">
-                <span>💡</span> {foodItem.recommendationReason}
-              </p>
+            {foodItem.isBestseller && (
+              <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand-600">
+                <Star className="w-3 h-3 fill-current" />
+                Bestseller
+              </span>
             )}
 
-            <h4 className="text-sm font-extrabold text-[#1F2937] group-hover:text-[#FF5200] transition-colors">
-              {foodItem.name}
-            </h4>
-
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm font-black text-[#1F2937]">
-                ₹{foodItem.price}
+            {foodItem.isSpicy && (
+              <span className="inline-flex items-center gap-1 text-[12px] font-medium text-danger-500">
+                <Flame className="w-3 h-3" />
+                Spicy
               </span>
-              {foodItem.calories && (
-                <span className="text-[11px] text-slate-400 font-medium">
-                  • {foodItem.calories} kcal
-                </span>
-              )}
-            </div>
+            )}
 
-            <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
-              {foodItem.description}
-            </p>
+            {foodItem.matchScore && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-brand-50 text-brand-600 text-[11px] font-semibold tnum">
+                <Sparkles className="w-3 h-3" />
+                {foodItem.matchScore}% match
+              </span>
+            )}
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
+          <h4 className="text-[15px] font-semibold text-ink-900 leading-snug">
+            {foodItem.name}
+          </h4>
+
+          <div className="flex items-baseline gap-2 mt-1">
+            <span className="text-[15px] font-semibold text-ink-900 tnum">₹{foodItem.price}</span>
+            {foodItem.calories && (
+              <span className="text-[12px] text-ink-400 tnum">{foodItem.calories} kcal</span>
+            )}
+          </div>
+
+          <p className="text-[13px] text-ink-500 mt-1.5 line-clamp-2 leading-relaxed">
+            {foodItem.description}
+          </p>
+
+          {foodItem.recommendationReason && (
+            <p className="mt-2 text-[12px] text-brand-600 leading-snug">
+              {foodItem.recommendationReason}
+            </p>
+          )}
+
+          <div className="mt-auto pt-3">
             <button
               onClick={() => dispatch(toggleFavoriteFood(foodItem.id))}
-              className={`text-xs font-semibold flex items-center gap-1 transition-colors ${
-                isFavorite ? 'text-rose-600' : 'text-slate-400 hover:text-slate-600'
+              className={`text-[13px] font-medium inline-flex items-center gap-1.5 transition-colors ${
+                isFavorite ? 'text-danger-500' : 'text-ink-400 hover:text-ink-600'
               }`}
             >
-              <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-current' : ''}`} />
-              <span>{isFavorite ? 'Saved' : 'Save'}</span>
+              <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+              {isFavorite ? 'Saved' : 'Save'}
             </button>
           </div>
         </div>
 
         {/* Right Side: Image & Add Button */}
-        <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden shrink-0 bg-slate-100">
-          <img
-            src={foodItem.image}
-            alt={foodItem.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
+        <div className="relative w-28 sm:w-32 shrink-0">
+          <div className="w-full aspect-square rounded-control overflow-hidden bg-surface-sunken">
+            <img
+              src={foodItem.image}
+              alt={foodItem.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+            />
+          </div>
 
           {/* ADD / Quantity Counter Button Overlay.
               Ordering is a customer capability — owner/admin see saved dishes
               without a cart control they could never complete. */}
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-10">
+          <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 z-10 w-[86%]">
             {!canOrder ? null : totalQty > 0 ? (
-              <div className="flex items-center gap-2 px-2 py-1.5 bg-[#1F2937] text-white rounded-xl shadow-lg border border-slate-700 text-xs font-black">
+              <div className="flex items-center justify-between px-1 h-9 bg-white text-brand-600 rounded-control shadow-raised border border-surface-line">
                 <button
                   onClick={handleDecrement}
-                  className="hover:text-[#FF5200] transition-colors px-1"
+                  aria-label="Decrease quantity"
+                  className="px-2 h-full hover:text-brand-700 transition-colors"
                 >
-                  <Minus className="w-3.5 h-3.5" />
+                  <Minus className="w-4 h-4" />
                 </button>
-                <span className="w-4 text-center">{totalQty}</span>
+                <span className="text-sm font-semibold tnum">{totalQty}</span>
                 <button
                   onClick={handleIncrement}
-                  className="hover:text-[#FF5200] transition-colors px-1"
+                  aria-label="Increase quantity"
+                  className="px-2 h-full hover:text-brand-700 transition-colors"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
             ) : (
               <button
                 onClick={handleAddClick}
-                className="px-4 py-1.5 bg-white hover:bg-[#FF5200] text-[#FF5200] hover:text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md border border-orange-200 transition-all duration-200 active:scale-95 whitespace-nowrap"
+                className="w-full h-9 bg-white hover:bg-brand-500 text-brand-600 hover:text-white font-semibold text-sm rounded-control shadow-raised border border-surface-line transition-colors"
               >
-                ADD {foodItem.customizationGroups?.length ? '+' : ''}
+                ADD{foodItem.customizationGroups?.length ? ' +' : ''}
               </button>
             )}
           </div>

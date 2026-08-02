@@ -35,6 +35,14 @@ services:
       - key: OWNER_EMAILS
         sync: false
 
+      # Browser origins allowed to call this API (comma-separated, no trailing
+      # slash) — e.g. https://cravecache.vercel.app. Only needed for the split
+      # deployment; the single-service setup is same-origin and never triggers
+      # a preflight. Leaving it unset makes the API answer cross-origin
+      # requests from ANY origin, so set it once the client URL is known.
+      - key: ALLOWED_ORIGINS
+        sync: false
+
       # Stripe. Without these, card checkout stays in simulated mode.
       - key: STRIPE_SECRET_KEY
         sync: false

@@ -68,38 +68,38 @@ export const OrderTrackerModal: React.FC<OrderTrackerModalProps> = ({ order, onC
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-xl bg-white rounded-panel shadow-2xl overflow-hidden border border-surface-line flex flex-col max-h-[90vh] animate-popIn">
         
         {/* Header */}
         <div className="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+              <span className="text-[13px] font-bold uppercase tracking-wider text-amber-400">
                 Order #{order.id}
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-orange-500/20 text-orange-300 border border-orange-500/30">
+              <span className="px-2 py-0.5 rounded-full text-[12px] font-semibold uppercase bg-brand-500/20 text-brand-200 border border-brand-500/30">
                 {order.status}
               </span>
             </div>
-            <h3 className="text-lg font-black mt-0.5">{order.restaurantName}</h3>
+            <h3 className="text-lg font-bold mt-0.5">{order.restaurantName}</h3>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-full text-ink-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tracker Progress Bar */}
-        <div className="p-6 bg-slate-50 border-b border-slate-200">
+        <div className="p-6 bg-surface-sunken border-b border-surface-line">
           {isCancelled ? (
-            <div className="p-4 bg-red-50 text-red-700 rounded-2xl border border-red-200 flex items-center gap-3">
+            <div className="p-4 bg-red-50 text-red-700 rounded-card border border-red-200 flex items-center gap-3">
               <XCircle className="w-8 h-8 text-red-500 shrink-0" />
               <div>
                 <h4 className="font-bold text-sm">Order Cancelled</h4>
-                <p className="text-xs text-red-600">Your refund has been initiated to your original payment method.</p>
+                <p className="text-[13px] text-red-600">Your refund has been initiated to your original payment method.</p>
               </div>
             </div>
           ) : (
@@ -113,15 +113,15 @@ export const OrderTrackerModal: React.FC<OrderTrackerModalProps> = ({ order, onC
                   return (
                     <div key={st.status} className="flex flex-col items-center flex-1 text-center">
                       <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
+                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-[13px] transition-all ${
                           isCompleted
-                            ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
-                            : 'bg-slate-200 text-slate-400'
-                        } ${isCurrent ? 'ring-4 ring-orange-500/20 scale-110' : ''}`}
+                            ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                            : 'bg-slate-200 text-ink-400'
+                        } ${isCurrent ? 'ring-4 ring-brand-500/20 scale-110' : ''}`}
                       >
                         <Icon className="w-4 h-4" />
                       </div>
-                      <span className={`text-[10px] font-bold mt-1.5 line-clamp-1 ${isCompleted ? 'text-slate-900' : 'text-slate-400'}`}>
+                      <span className={`text-[12px] font-bold mt-1.5 line-clamp-1 ${isCompleted ? 'text-ink-900' : 'text-ink-400'}`}>
                         {st.label}
                       </span>
                     </div>
@@ -132,7 +132,7 @@ export const OrderTrackerModal: React.FC<OrderTrackerModalProps> = ({ order, onC
               {/* Connecting Bar */}
               <div className="relative w-full bg-slate-200 h-1.5 rounded-full overflow-hidden -mt-10 mb-6">
                 <div
-                  className="bg-orange-600 h-full transition-all duration-500"
+                  className="bg-brand-500 h-full transition-all duration-500"
                   style={{
                     width: `${Math.min(100, (currentStageIdx / (stages.length - 1)) * 100)}%`,
                   }}
@@ -140,8 +140,8 @@ export const OrderTrackerModal: React.FC<OrderTrackerModalProps> = ({ order, onC
               </div>
 
               <div className="text-center pt-2">
-                <p className="text-xs font-semibold text-slate-600">
-                  Estimated Delivery Time: <strong className="text-slate-900">20-25 Mins</strong>
+                <p className="text-[13px] font-semibold text-ink-600">
+                  Estimated Delivery Time: <strong className="text-ink-900">20-25 Mins</strong>
                 </p>
               </div>
             </div>
@@ -153,24 +153,24 @@ export const OrderTrackerModal: React.FC<OrderTrackerModalProps> = ({ order, onC
           
           {/* Driver details if on the way */}
           {order.deliveryDriver && !isCancelled && currentStageIdx >= 3 && (
-            <div className="p-4 bg-orange-50/80 rounded-2xl border border-orange-200 flex items-center justify-between">
+            <div className="p-4 bg-brand-50/80 rounded-card border border-brand-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <img
                   src={order.deliveryDriver.avatar}
                   alt={order.deliveryDriver.name}
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-orange-500"
+                  className="w-12 h-12 rounded-full object-cover ring-2 ring-brand-500"
                 />
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase text-orange-600 tracking-wider">Your Delivery Hero</span>
-                  <h4 className="font-bold text-slate-900 text-sm">{order.deliveryDriver.name}</h4>
+                  <span className="text-[12px] font-semibold uppercase text-brand-600 tracking-wider">Your Delivery Hero</span>
+                  <h4 className="font-bold text-ink-900 text-sm">{order.deliveryDriver.name}</h4>
                 </div>
               </div>
 
               <a
                 href={`tel:${order.deliveryDriver.phone}`}
-                className="py-2 px-3 bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-slate-800 transition-colors shadow-sm"
+                className="py-2 px-3 bg-slate-900 text-white rounded-control text-[13px] font-bold flex items-center gap-1.5 hover:bg-slate-800 transition-colors shadow-sm"
               >
-                <Phone className="w-3.5 h-3.5 text-orange-400" />
+                <Phone className="w-3.5 h-3.5 text-brand-300" />
                 <span>Call Driver</span>
               </a>
             </div>
@@ -178,14 +178,14 @@ export const OrderTrackerModal: React.FC<OrderTrackerModalProps> = ({ order, onC
 
           {/* Timeline Events */}
           <div>
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Live Order Timeline</h4>
-            <div className="space-y-3 pl-2 border-l-2 border-orange-200">
+            <h4 className="text-[13px] font-bold text-ink-400 uppercase tracking-wider mb-3">Live Order Timeline</h4>
+            <div className="space-y-3 pl-2 border-l-2 border-brand-100">
               {order.timeline.map((item, idx) => (
-                <div key={idx} className="relative pl-4 text-xs">
-                  <div className="absolute -left-[13px] top-0.5 w-3 h-3 rounded-full bg-orange-600 ring-4 ring-white" />
-                  <span className="font-bold text-slate-900 block">{item.status}</span>
-                  <span className="text-slate-500 text-[11px] block">{item.message}</span>
-                  <span className="text-[10px] text-slate-400">{new Date(item.timestamp).toLocaleTimeString()}</span>
+                <div key={idx} className="relative pl-4 text-[13px]">
+                  <div className="absolute -left-[13px] top-0.5 w-3 h-3 rounded-full bg-brand-500 ring-4 ring-white" />
+                  <span className="font-bold text-ink-900 block">{item.status}</span>
+                  <span className="text-ink-500 text-[13px] block">{item.message}</span>
+                  <span className="text-[12px] text-ink-400">{new Date(item.timestamp).toLocaleTimeString()}</span>
                 </div>
               ))}
             </div>
@@ -193,21 +193,21 @@ export const OrderTrackerModal: React.FC<OrderTrackerModalProps> = ({ order, onC
 
           {/* Itemized Order List */}
           <div>
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ordered Items</h4>
-            <div className="space-y-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+            <h4 className="text-[13px] font-bold text-ink-400 uppercase tracking-wider mb-2">Ordered Items</h4>
+            <div className="space-y-2 bg-surface-sunken p-3 rounded-card border border-surface-line/80">
               {order.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center text-xs">
+                <div key={idx} className="flex justify-between items-center text-[13px]">
                   <div>
-                    <span className="font-bold text-slate-900">{item.foodItem.name}</span>
-                    <span className="text-slate-500 ml-2">x{item.quantity}</span>
+                    <span className="font-bold text-ink-900">{item.foodItem.name}</span>
+                    <span className="text-ink-500 ml-2">x{item.quantity}</span>
                   </div>
-                  <span className="font-bold text-slate-900">₹{item.itemTotalPrice * item.quantity}</span>
+                  <span className="font-bold text-ink-900">₹{item.itemTotalPrice * item.quantity}</span>
                 </div>
               ))}
 
-              <div className="pt-2 border-t border-slate-200 flex justify-between font-black text-slate-900 text-xs">
+              <div className="pt-2 border-t border-surface-line flex justify-between font-bold text-ink-900 text-[13px]">
                 <span>Total Amount Paid</span>
-                <span className="text-orange-600">₹{order.totalAmount}</span>
+                <span className="text-brand-600">₹{order.totalAmount}</span>
               </div>
             </div>
           </div>
@@ -215,15 +215,15 @@ export const OrderTrackerModal: React.FC<OrderTrackerModalProps> = ({ order, onC
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center gap-3">
-          <div className="text-xs text-slate-500">
-            Payment Method: <strong className="text-slate-900">{order.paymentMethod}</strong>
+        <div className="p-4 bg-surface-sunken border-t border-surface-line flex justify-between items-center gap-3">
+          <div className="text-[13px] text-ink-500">
+            Payment Method: <strong className="text-ink-900">{order.paymentMethod}</strong>
           </div>
 
           {!isCancelled && order.status !== 'Delivered' && (
             <button
               onClick={handleCancelOrder}
-              className="py-2 px-4 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors border border-red-200"
+              className="py-2 px-4 text-[13px] font-bold text-red-600 hover:bg-red-50 rounded-control transition-colors border border-red-200"
             >
               Cancel Order
             </button>

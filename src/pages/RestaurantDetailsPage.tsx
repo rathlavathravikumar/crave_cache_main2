@@ -53,8 +53,8 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
   if (detailsLoading || !currentRestaurant) {
     return (
       <div className="py-20 text-center space-y-4">
-        <div className="w-12 h-12 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-xs font-bold text-slate-600">Loading Restaurant Menu...</p>
+        <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-[13px] font-bold text-ink-600">Loading Restaurant Menu...</p>
       </div>
     );
   }
@@ -98,7 +98,7 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 py-2 px-3 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
+          className="flex items-center gap-2 py-2 px-3 bg-white rounded-control border border-surface-line text-[13px] font-bold text-ink-600 hover:bg-surface-sunken transition-colors shadow-card"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Restaurants</span>
@@ -107,10 +107,10 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => dispatch(toggleFavoriteRestaurant(currentRestaurant.id))}
-            className={`p-2 rounded-xl border transition-all ${
+            className={`p-2 rounded-control border transition-all ${
               isFavorite
                 ? 'bg-rose-500 text-white border-rose-500'
-                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                : 'bg-white border-surface-line text-ink-600 hover:bg-surface-sunken'
             }`}
           >
             <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
@@ -119,7 +119,7 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
       </div>
 
       {/* Hero Banner Card */}
-      <div className="bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-md">
+      <div className="bg-white rounded-panel overflow-hidden border border-surface-line/80 shadow-md">
         
         <div className="relative h-60 sm:h-72 bg-slate-900">
           <img
@@ -131,7 +131,7 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
 
           {/* Offer Tag */}
           {currentRestaurant.discountOffer && (
-            <div className="absolute top-4 left-4 bg-orange-600 text-white font-black text-xs px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1.5">
+            <div className="absolute top-4 left-4 bg-brand-500 text-white font-bold text-[13px] px-3 py-1.5 rounded-control shadow-md flex items-center gap-1.5">
               <Tag className="w-3.5 h-3.5" />
               <span>{currentRestaurant.discountOffer}</span>
             </div>
@@ -139,29 +139,29 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
         </div>
 
         {/* Restaurant Header Details */}
-        <div className="p-6 sm:p-8 -mt-12 relative z-10 bg-white rounded-3xl mx-4 sm:mx-6 shadow-xl border border-slate-100 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+        <div className="p-6 sm:p-8 -mt-12 relative z-10 bg-white rounded-panel mx-4 sm:mx-6 shadow-xl border border-surface-line space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-line pb-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold text-ink-900 leading-tight">
                 {currentRestaurant.name}
               </h1>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-[13px] text-ink-500 mt-1">
                 {currentRestaurant.cuisine.join(', ')} • {currentRestaurant.address}, {currentRestaurant.city}
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold text-sm shadow-xs">
+              <div className="flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1.5 rounded-control font-bold text-sm shadow-card">
                 <Star className="w-4 h-4 fill-current" />
                 <span>{currentRestaurant.rating}</span>
-                <span className="text-emerald-200 text-xs">({currentRestaurant.reviewCount})</span>
+                <span className="text-emerald-200 text-[13px]">({currentRestaurant.reviewCount})</span>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6 text-xs text-slate-700 font-medium">
+          <div className="flex flex-wrap items-center gap-6 text-[13px] text-ink-600 font-medium">
             <div className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-orange-600" />
+              <Clock className="w-4 h-4 text-brand-600" />
               <span>Delivery: <strong>{currentRestaurant.deliveryTimeMinutes} Mins</strong></span>
             </div>
 
@@ -169,7 +169,7 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
               <span>Cost for Two: <strong>₹{currentRestaurant.priceForTwo}</strong></span>
             </div>
 
-            <div className="flex items-center gap-1.5 text-slate-500">
+            <div className="flex items-center gap-1.5 text-ink-500">
               <Phone className="w-4 h-4" />
               <span>{currentRestaurant.phone}</span>
             </div>
@@ -178,26 +178,26 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
       </div>
 
       {/* Menu Search & Filters Bar */}
-      <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-md p-4 rounded-card border border-surface-line shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
         
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+          <Search className="w-4 h-4 text-ink-400 absolute left-3 top-3" />
           <input
             type="text"
             value={menuSearch}
             onChange={(e) => setMenuSearch(e.target.value)}
             placeholder="Search menu items..."
-            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-orange-500"
+            className="w-full pl-9 pr-3 py-2 text-[13px] bg-surface-sunken border border-surface-line rounded-control outline-none focus:border-brand-500"
           />
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between">
           <button
             onClick={() => setVegOnly(!vegOnly)}
-            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+            className={`px-3 py-2 rounded-control text-[13px] font-bold border transition-all ${
               vegOnly
-                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-card'
+                : 'bg-surface-sunken text-ink-600 border-surface-line hover:bg-surface-sunken'
             }`}
           >
             🌱 Pure Veg Only
@@ -205,7 +205,7 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
 
           <button
             onClick={() => setIsReviewModalOpen(true)}
-            className="py-2 px-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 shadow-xs"
+            className="py-2 px-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[13px] rounded-control transition-colors flex items-center gap-1.5 shadow-card"
           >
             <MessageSquare className="w-3.5 h-3.5" />
             <span>Write Review</span>
@@ -221,8 +221,8 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
 
           return (
             <div key={cat} className="space-y-4">
-              <h3 className="text-lg font-black text-slate-900 border-b border-slate-200 pb-2">
-                {cat} <span className="text-xs text-slate-400 font-normal">({categoryFoods.length})</span>
+              <h3 className="text-lg font-bold text-ink-900 border-b border-surface-line pb-2">
+                {cat} <span className="text-[13px] text-ink-400 font-normal">({categoryFoods.length})</span>
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -235,24 +235,24 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
         })}
 
         {filteredFoods.length === 0 && (
-          <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-200">
-            <p className="text-xs font-bold text-slate-600">No dishes match your menu search query.</p>
+          <div className="text-center py-12 bg-surface-sunken rounded-card border border-surface-line">
+            <p className="text-[13px] font-bold text-ink-600">No dishes match your menu search query.</p>
           </div>
         )}
       </div>
 
       {/* Restaurant Customer Reviews */}
-      <div className="p-6 bg-white rounded-3xl border border-slate-200 space-y-4">
-        <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-orange-600" /> Customer Ratings & Reviews
+      <div className="p-6 bg-white rounded-panel border border-surface-line space-y-4">
+        <h3 className="text-lg font-bold text-ink-900 flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-brand-600" /> Customer Ratings & Reviews
         </h3>
 
         {restaurantReviews.length === 0 ? (
-          <p className="text-xs text-slate-500">No reviews yet. Be the first to review this kitchen!</p>
+          <p className="text-[13px] text-ink-500">No reviews yet. Be the first to review this kitchen!</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {restaurantReviews.map((rev) => (
-              <div key={rev.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+              <div key={rev.id} className="p-4 bg-surface-sunken rounded-card border border-surface-line/80 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <img
@@ -260,15 +260,15 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
                       alt={rev.userName}
                       className="w-7 h-7 rounded-full object-cover"
                     />
-                    <span className="font-bold text-xs text-slate-900">{rev.userName}</span>
+                    <span className="font-bold text-[13px] text-ink-900">{rev.userName}</span>
                   </div>
-                  <div className="flex items-center text-amber-500 text-xs font-bold">
+                  <div className="flex items-center text-amber-500 text-[13px] font-bold">
                     <Star className="w-3.5 h-3.5 fill-current" /> {rev.rating}
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-600 leading-relaxed italic">"{rev.comment}"</p>
-                <span className="text-[10px] text-slate-400 block">{new Date(rev.createdAt).toLocaleDateString()}</span>
+                <p className="text-[13px] text-ink-600 leading-relaxed italic">"{rev.comment}"</p>
+                <span className="text-[12px] text-ink-400 block">{new Date(rev.createdAt).toLocaleDateString()}</span>
               </div>
             ))}
           </div>
@@ -278,20 +278,20 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
       {/* Add Review Modal */}
       {isReviewModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
-            <h3 className="text-base font-bold text-slate-900 mb-4">Rate & Review {currentRestaurant.name}</h3>
+          <div className="bg-white rounded-card max-w-md w-full p-6 shadow-2xl border border-surface-line">
+            <h3 className="text-base font-bold text-ink-900 mb-4">Rate & Review {currentRestaurant.name}</h3>
 
             <form onSubmit={handleAddReview} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Select Rating</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Select Rating</label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
                       onClick={() => setNewRating(star)}
-                      className={`p-2 rounded-xl text-lg font-bold border ${
-                        newRating >= star ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 text-slate-400'
+                      className={`p-2 rounded-control text-lg font-bold border ${
+                        newRating >= star ? 'bg-amber-500 text-white border-amber-500' : 'bg-surface-sunken text-ink-400'
                       }`}
                     >
                       ★ {star}
@@ -301,14 +301,14 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Your Review</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Your Review</label>
                 <textarea
                   required
                   rows={3}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Tell us about the food quality, taste, and packaging..."
-                  className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-orange-500"
+                  className="w-full p-3 text-[13px] bg-surface-sunken border border-surface-line rounded-control outline-none focus:border-brand-500"
                 />
               </div>
 
@@ -316,13 +316,13 @@ export const RestaurantDetailsPage: React.FC<RestaurantDetailsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsReviewModalOpen(false)}
-                  className="flex-1 py-2 text-xs font-semibold border border-slate-200 rounded-xl"
+                  className="flex-1 py-2 text-[13px] font-semibold border border-surface-line rounded-control"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-xl"
+                  className="flex-1 py-2 text-[13px] font-bold bg-brand-500 hover:bg-brand-700 text-white rounded-control"
                 >
                   Submit Review
                 </button>

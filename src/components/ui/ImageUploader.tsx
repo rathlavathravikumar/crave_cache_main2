@@ -115,7 +115,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   return (
     <div className={cn('space-y-2', className)}>
-      <span className="block text-xs font-bold text-ink-800">{label}</span>
+      <span className="block text-[13px] font-bold text-ink-800">{label}</span>
 
       <div className="flex items-start gap-3">
         <div
@@ -143,7 +143,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               type="button"
               disabled={busy}
               onClick={() => inputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-control border border-surface-line bg-white px-3 py-2 text-xs font-bold text-ink-800 transition-colors hover:bg-surface-sunken disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-control border border-surface-line bg-white px-3 py-2 text-[13px] font-bold text-ink-800 transition-colors hover:bg-surface-sunken disabled:opacity-60"
             >
               <Upload className="h-3.5 w-3.5" />
               {value ? 'Replace' : 'Upload'}
@@ -156,7 +156,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                   onChange('');
                   setNotPersisted(false);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-control border border-surface-line bg-white px-3 py-2 text-xs font-bold text-ink-600 transition-colors hover:bg-danger-50 hover:text-danger-600"
+                className="inline-flex items-center gap-1.5 rounded-control border border-surface-line bg-white px-3 py-2 text-[13px] font-bold text-ink-600 transition-colors hover:bg-danger-50 hover:text-danger-600"
               >
                 <X className="h-3.5 w-3.5" />
                 Remove
@@ -170,20 +170,20 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             value={value && value.startsWith('data:') ? '' : value || ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder="…or paste an image URL"
-            className="w-full rounded-control border border-surface-line px-3 py-2 text-xs font-medium text-ink-800 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none"
+            className="w-full rounded-control border border-surface-line px-3 py-2 text-[13px] font-medium text-ink-800 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none"
           />
 
           {error ? (
-            <p role="alert" className="text-[11px] font-bold text-danger-600">
+            <p role="alert" className="text-[13px] font-bold text-danger-600">
               {error}
             </p>
           ) : notPersisted ? (
-            <p className="flex items-start gap-1 text-[11px] font-semibold text-warning-500">
+            <p className="flex items-start gap-1 text-[13px] font-semibold text-warning-500">
               <CloudUpload className="mt-px h-3 w-3 shrink-0" />
               Stored inline only — set the Cloudinary keys to host images on a CDN.
             </p>
           ) : (
-            hint && <p className="text-[11px] font-medium text-ink-400">{hint}</p>
+            hint && <p className="text-[13px] font-medium text-ink-400">{hint}</p>
           )}
         </div>
       </div>

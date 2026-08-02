@@ -11,57 +11,54 @@ interface AuthState {
   selectedAddress: Address | null;
 }
 
-const savedUser = localStorage.getItem('cravecache_user');
-const savedToken = localStorage.getItem('cravecache_token');
+/**
+ * Restores a previous session from localStorage — and nothing else.
+ *
+ * A session is only considered real when BOTH the user record and the token
+ * are present, because only the sign-in paths (password, register, Clerk)
+ * write the token. The user record alone can be left behind by a profile or
+ * address edit, and must not be enough to count as signed in.
+ *
+ * Earlier builds fabricated an 'Alex Johnson' customer here with
+ * isAuthenticated: true, so a first-time visitor skipped the landing page and
+ * arrived inside the customer portal as a user they had never signed in as.
+ */
+const readStoredSession = (): { user: User | null; token: string | null } => {
+  const savedToken = localStorage.getItem('cravecache_token');
+  const savedUser = localStorage.getItem('cravecache_user');
+  if (!savedToken || !savedUser) return { user: null, token: null };
 
-const parsedSavedUser: any = savedUser ? JSON.parse(savedUser) : null;
-// One-time migration: earlier builds seeded the mock session with an id
-// ('usr_alex') that never matched the backend's seed user ('usr_customer_1'),
-// which made profile updates and order history silently fail.
-if (parsedSavedUser && parsedSavedUser.id === 'usr_alex') {
-  parsedSavedUser.id = 'usr_customer_1';
-  localStorage.setItem('cravecache_user', JSON.stringify(parsedSavedUser));
-}
+  let parsed: any;
+  try {
+    parsed = JSON.parse(savedUser);
+  } catch {
+    // Corrupt entry — drop it rather than crashing the store at import time.
+    localStorage.removeItem('cravecache_user');
+    localStorage.removeItem('cravecache_token');
+    return { user: null, token: null };
+  }
+  if (!parsed || typeof parsed !== 'object') return { user: null, token: null };
 
-const initialUser: User | null = parsedSavedUser
-  ? parsedSavedUser
-  : {
-      id: 'usr_customer_1',
-      name: 'Alex Johnson',
-      email: 'alex@example.com',
-      role: 'customer',
-      phone: '+1 (555) 234-5678',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      addresses: [
-        {
-          id: 'addr_1',
-          title: 'Home',
-          street: '123 Main Street, Apt 4B',
-          city: 'Springfield',
-          state: 'IL',
-          zipCode: '62701',
-          landmark: 'Near Central Park',
-          isDefault: true,
-        },
-        {
-          id: 'addr_2',
-          title: 'Office',
-          street: '456 Innovation Blvd, Suite 200',
-          city: 'Springfield',
-          state: 'IL',
-          zipCode: '62702',
-          isDefault: false,
-        },
-      ],
-    };
+  // One-time migration: earlier builds seeded the mock session with an id
+  // ('usr_alex') that never matched the backend's seed user ('usr_customer_1'),
+  // which made profile updates and order history silently fail.
+  if (parsed.id === 'usr_alex') {
+    parsed.id = 'usr_customer_1';
+    localStorage.setItem('cravecache_user', JSON.stringify(parsed));
+  }
+
+  return { user: parsed as User, token: savedToken };
+};
+
+const { user: restoredUser, token: restoredToken } = readStoredSession();
 
 const initialState: AuthState = {
-  user: initialUser,
-  token: savedToken || 'mock_jwt_token_alex_123',
-  isAuthenticated: true,
+  user: restoredUser,
+  token: restoredToken,
+  isAuthenticated: Boolean(restoredUser && restoredToken),
   loading: false,
   error: null,
-  selectedAddress: initialUser?.addresses?.[0] || null,
+  selectedAddress: restoredUser?.addresses?.[0] || null,
 };
 
 export const loginUser = createAsyncThunk(

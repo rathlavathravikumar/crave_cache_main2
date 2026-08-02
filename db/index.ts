@@ -14,6 +14,7 @@ import mongoose from 'mongoose';
 import type { Model } from 'mongoose';
 import {
   UserModel,
+  UserCredentialModel,
   RestaurantModel,
   FoodItemModel,
   OrderModel,
@@ -29,7 +30,15 @@ import {
   INITIAL_REVIEWS,
 } from '../src/data/initialData';
 import { INITIAL_ORDERS } from './seedOrders';
-import type { Restaurant, FoodItem, Coupon, User, Order, Review } from '../src/types';
+import type {
+  Restaurant,
+  FoodItem,
+  Coupon,
+  User,
+  Order,
+  Review,
+  UserCredential,
+} from '../src/types';
 
 /** Simple equality filter, e.g. { restaurantId: 'rest_1' }. */
 export type Filter<T> = Partial<Record<keyof T, unknown>>;
@@ -130,6 +139,9 @@ const memoryRepo = <T extends { id: string }>(seed: T[]): Repository<T> => {
 
 export interface Store {
   users: Repository<User>;
+  /* Password hashes and reset tokens. Deliberately a sibling of `users` rather
+     than fields on it, so no user-serialising handler can leak them. */
+  credentials: Repository<UserCredential>;
   restaurants: Repository<Restaurant>;
   foods: Repository<FoodItem>;
   orders: Repository<Order>;
@@ -139,6 +151,9 @@ export interface Store {
 
 let store: Store = {
   users: memoryRepo<User>(INITIAL_USERS),
+  // Seeded empty: demo accounts start with no password and sign in via the
+  // demo/OAuth paths until someone sets one through the reset flow.
+  credentials: memoryRepo<UserCredential>([]),
   restaurants: memoryRepo<Restaurant>(INITIAL_RESTAURANTS),
   foods: memoryRepo<FoodItem>(INITIAL_FOOD_ITEMS),
   orders: memoryRepo<Order>(INITIAL_ORDERS),
@@ -201,6 +216,7 @@ export async function connectDatabase(): Promise<void> {
 
     store = {
       users: mongoRepo<User>(UserModel),
+      credentials: mongoRepo<UserCredential>(UserCredentialModel),
       restaurants: mongoRepo<Restaurant>(RestaurantModel),
       foods: mongoRepo<FoodItem>(FoodItemModel),
       orders: mongoRepo<Order>(OrderModel),

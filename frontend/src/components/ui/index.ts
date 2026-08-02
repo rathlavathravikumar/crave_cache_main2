@@ -16,3 +16,4 @@ export {
   SkeletonStatTile,
 } from './Skeleton';
 export { ImageUploader } from './ImageUploader';
+export { Stagger, StaggerItem } from './Stagger';

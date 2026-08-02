@@ -13,6 +13,7 @@ import {
   Clock,
   ChevronRight,
   Store,
+  X,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../hooks/reduxHooks';
 import { logout, setSelectedAddress } from '../store/slices/authSlice';
@@ -81,76 +82,71 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
     <>
       <header
         ref={headerRef}
-        className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs transition-all"
+        className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-surface-line"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20 gap-4">
-            
+        <div className="container-app">
+          <div className="flex items-center h-16 gap-3 sm:gap-5">
+
             {/* Logo & Location */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4 sm:gap-6 shrink-0">
               <button
                 onClick={() => onNavigate('home')}
-                className="flex items-center gap-2.5 text-left group focus:outline-none"
+                className="flex items-center gap-2 text-left focus:outline-none"
               >
-                <div className="w-10 h-10 rounded-xl bg-[#FF5200] flex items-center justify-center text-white font-black shadow-md shadow-[#FF5200]/20 group-hover:scale-105 transition-transform">
-                  <UtensilsCrossed className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-[10px] bg-brand-500 flex items-center justify-center text-white">
+                  <UtensilsCrossed className="w-[18px] h-[18px]" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xl font-black tracking-tight text-[#1F2937] group-hover:text-[#FF5200] transition-colors">
-                      Crave<span className="text-[#FF5200]">Cache</span>
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-bold text-[#FF5200] tracking-wider uppercase block -mt-0.5">
-                    AI Food Engine
-                  </span>
-                </div>
+                <span className="text-[17px] font-bold tracking-tight text-ink-900">
+                  Crave<span className="text-brand-500">Cache</span>
+                </span>
               </button>
 
               {/* Location Picker */}
               <button
                 onClick={() => setIsLocationModalOpen(true)}
-                className="hidden md:flex items-center gap-2 py-2 px-3.5 rounded-xl bg-[#F3F4F6] hover:bg-slate-200/70 border border-[#E5E7EB] transition-colors text-left"
+                className="hidden md:flex items-center gap-1.5 text-left group"
               >
-                <MapPin className="w-4 h-4 text-[#FF5200] shrink-0" />
-                <div className="text-xs max-w-[160px] truncate">
-                  <span className="font-bold text-[#1F2937] block truncate">
-                    {selectedAddress?.title || 'Deliver To'}
+                <MapPin className="w-4 h-4 text-brand-500 shrink-0" />
+                <div className="max-w-[170px]">
+                  <span className="block text-[11px] font-medium text-ink-500 leading-tight">
+                    Deliver to
                   </span>
-                  <span className="text-slate-500 truncate block">
-                    {selectedAddress ? `${selectedAddress.street}, ${selectedAddress.city}` : 'Select Address'}
+                  <span className="block text-[13px] font-semibold text-ink-900 truncate leading-tight group-hover:text-brand-600 transition-colors">
+                    {selectedAddress
+                      ? `${selectedAddress.title} · ${selectedAddress.city}`
+                      : 'Select address'}
                   </span>
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
+                <ChevronDown className="w-4 h-4 text-ink-400 shrink-0" />
               </button>
             </div>
 
             {/* Global Search Bar — searches the customer catalogue only */}
             {isCustomer && (
-              <div className="hidden lg:flex flex-1 max-w-md items-center relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <div className="hidden lg:flex flex-1 max-w-xl items-center relative">
+                <Search className="w-[18px] h-[18px] text-ink-400 absolute left-3.5 pointer-events-none" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  placeholder="Search restaurants, cuisines, dishes..."
+                  placeholder="Search for restaurants, cuisines or dishes"
                   aria-label="Search restaurants, cuisines and dishes"
-                  className="w-full pl-10 pr-4 py-2 text-xs font-medium bg-[#F3F4F6] hover:bg-slate-100/90 focus:bg-white border border-[#E5E7EB] rounded-xl focus:ring-2 focus:ring-[#FF5200]/20 focus:border-[#FF5200] outline-none transition-all"
+                  className="field pl-11 bg-surface-sunken"
                 />
               </div>
             )}
 
             {/* Right Action Icons */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2 ml-auto">
 
               {/* AI Food Assistant Trigger */}
               {isCustomer && (
                 <button
                   onClick={() => dispatch(toggleAIAssistant(true))}
-                  className="flex items-center gap-2 py-2 px-3.5 rounded-xl bg-[#FF5200] hover:bg-[#e04800] text-white text-xs font-bold shadow-md shadow-[#FF5200]/20 hover:scale-105 active:scale-95 transition-all"
+                  className="flex items-center gap-1.5 py-2 px-2.5 rounded-[10px] text-[13px] font-medium text-ink-600 hover:text-ink-900 hover:bg-surface-sunken transition-colors"
                 >
-                  <Sparkles className="w-4 h-4 text-amber-200 animate-pulse" />
-                  <span className="hidden sm:inline">AI Assistant</span>
+                  <Sparkles className="w-[18px] h-[18px] text-brand-500" />
+                  <span className="hidden lg:inline">AI Assistant</span>
                 </button>
               )}
 
@@ -158,15 +154,20 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
               <button
                 onClick={() => onNavigate('wishlist')}
                 aria-label={`Saved favourites${wishlistTotal > 0 ? ` (${wishlistTotal})` : ''}`}
-                className="relative p-2.5 rounded-xl text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                className="flex items-center gap-1.5 py-2 px-2.5 rounded-[10px] text-[13px] font-medium text-ink-600 hover:text-ink-900 hover:bg-surface-sunken transition-colors"
                 title="Saved favourites"
               >
-                <Heart className="w-5 h-5" />
-                {wishlistTotal > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
-                    {wishlistTotal}
-                  </span>
-                )}
+                {/* Badge anchors to the icon, not the button: anchored to the
+                    button it lands on top of the label at lg and up. */}
+                <span className="relative flex">
+                  <Heart className="w-[18px] h-[18px]" />
+                  {wishlistTotal > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-1 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center tnum">
+                      {wishlistTotal}
+                    </span>
+                  )}
+                </span>
+                <span className="hidden lg:inline">Favourites</span>
               </button>
 
               {/* Cart Drawer Toggle */}
@@ -174,47 +175,55 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
                 <button
                   onClick={() => dispatch(toggleCartDrawer(true))}
                   aria-label={`Open cart (${totalCartCount} items)`}
-                  className="relative flex items-center gap-2 py-2 px-3.5 rounded-xl bg-[#FFF5F0] hover:bg-orange-100/80 text-[#FF5200] border border-orange-200/80 font-bold text-xs transition-colors"
+                  className="flex items-center gap-1.5 py-2 px-2.5 rounded-[10px] text-[13px] font-medium text-ink-600 hover:text-ink-900 hover:bg-surface-sunken transition-colors"
                 >
-                  <ShoppingBag className="w-4 h-4 text-[#FF5200]" />
-                  <span className="hidden sm:inline">Cart</span>
-                  <span className="px-2 py-0.5 rounded-full bg-[#FF5200] text-white text-[11px] font-extrabold ml-0.5">
-                    {totalCartCount}
+                  <span className="relative flex">
+                    <ShoppingBag className="w-[18px] h-[18px]" />
+                    {totalCartCount > 0 && (
+                      <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-1 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center tnum">
+                        {totalCartCount}
+                      </span>
+                    )}
                   </span>
+                  <span className="hidden lg:inline">Cart</span>
                 </button>
               )}
 
               {/* User Account / Profile Menu */}
               {isAuthenticated ? (
-                <div className="relative">
+                <div className="relative ml-1">
                   <button
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
+                    className="flex items-center gap-2 p-1 pr-2 rounded-[10px] hover:bg-surface-sunken transition-colors"
                   >
                     <img
                       src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
                       alt={user?.name}
-                      className="w-8 h-8 rounded-lg object-cover ring-2 ring-orange-500/20"
+                      className="w-8 h-8 rounded-full object-cover"
                     />
-                    <div className="hidden md:block text-left text-xs">
-                      <span className="font-bold text-slate-800 block leading-tight">{user?.name}</span>
-                      <span className="text-[10px] text-slate-500 capitalize">{user?.role}</span>
+                    <div className="hidden md:block text-left">
+                      <span className="block text-[13px] font-semibold text-ink-900 leading-tight">
+                        {user?.name}
+                      </span>
+                      <span className="block text-[11px] text-ink-500 capitalize leading-tight">
+                        {user?.role}
+                      </span>
                     </div>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden md:block" />
+                    <ChevronDown className="w-4 h-4 text-ink-400 hidden md:block" />
                   </button>
 
                   {/* Dropdown Menu */}
                   {isProfileMenuOpen && (
                     <div
                       onMouseLeave={() => setIsProfileMenuOpen(false)}
-                      className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-fadeIn"
+                      className="absolute right-0 mt-2 w-60 bg-white rounded-panel shadow-overlay border border-surface-line py-1.5 z-50"
                     >
-                      <div className="px-4 py-2 border-b border-slate-100">
-                        <p className="text-xs font-bold text-slate-900">{user?.name}</p>
-                        <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
+                      <div className="px-4 py-2.5 border-b border-surface-line">
+                        <p className="text-sm font-semibold text-ink-900">{user?.name}</p>
+                        <p className="text-xs text-ink-500 truncate">{user?.email}</p>
                         {user?.role === 'admin' && (
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-extrabold">
-                            ADMIN ACCESS
+                          <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[11px] font-semibold">
+                            Admin access
                           </span>
                         )}
                       </div>
@@ -227,9 +236,9 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
                               setIsProfileMenuOpen(false);
                               onNavigate('orders');
                             }}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-ink-800 hover:bg-surface-sunken transition-colors"
                           >
-                            <Clock className="w-4 h-4 text-slate-500" />
+                            <Clock className="w-[18px] h-[18px] text-ink-400" />
                             My Orders
                           </button>
 
@@ -238,9 +247,9 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
                               setIsProfileMenuOpen(false);
                               onNavigate('profile');
                             }}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-ink-800 hover:bg-surface-sunken transition-colors"
                           >
-                            <UserIcon className="w-4 h-4 text-slate-500" />
+                            <UserIcon className="w-[18px] h-[18px] text-ink-400" />
                             Profile Settings
                           </button>
                         </>
@@ -252,9 +261,9 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
                             setIsProfileMenuOpen(false);
                             onNavigate('owner');
                           }}
-                          className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-[#FF5200] hover:bg-orange-50 transition-colors"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50 transition-colors"
                         >
-                          <Store className="w-4 h-4 text-[#FF5200]" />
+                          <Store className="w-[18px] h-[18px]" />
                           Restaurant Owner Portal
                         </button>
                       )}
@@ -265,9 +274,9 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
                             setIsProfileMenuOpen(false);
                             onNavigate('admin');
                           }}
-                          className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 transition-colors"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-purple-700 hover:bg-purple-50 transition-colors"
                         >
-                          <LayoutDashboard className="w-4 h-4 text-purple-600" />
+                          <LayoutDashboard className="w-[18px] h-[18px]" />
                           Admin Dashboard
                         </button>
                       )}
@@ -282,9 +291,9 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
                               setIsProfileMenuOpen(false);
                               onNavigate('profile');
                             }}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-ink-800 hover:bg-surface-sunken transition-colors"
                           >
-                            <UserIcon className="w-4 h-4 text-slate-500" />
+                            <UserIcon className="w-[18px] h-[18px] text-ink-400" />
                             Profile Settings
                           </button>
 
@@ -293,24 +302,24 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
                               setIsProfileMenuOpen(false);
                               onNavigate('wishlist');
                             }}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-ink-800 hover:bg-surface-sunken transition-colors"
                           >
-                            <Heart className="w-4 h-4 text-slate-500" />
+                            <Heart className="w-[18px] h-[18px] text-ink-400" />
                             Saved Favourites
                           </button>
                         </>
                       )}
 
-                      <div className="my-1 border-t border-slate-100" />
+                      <div className="my-1.5 border-t border-surface-line" />
 
                       <button
                         onClick={() => {
                           setIsProfileMenuOpen(false);
                           dispatch(logout());
                         }}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-danger-500 hover:bg-danger-50 transition-colors"
                       >
-                        <LogOut className="w-4 h-4" />
+                        <LogOut className="w-[18px] h-[18px]" />
                         Sign Out
                       </button>
                     </div>
@@ -325,48 +334,64 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
 
       {/* Address Picker Modal */}
       {isLocationModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-orange-600" /> Select Delivery Address
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-panel shadow-overlay max-w-md w-full p-6">
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <h3 className="text-lg font-bold text-ink-900 tracking-tight">Delivery address</h3>
+                <p className="text-[13px] text-ink-500 mt-0.5">
+                  Choose where this order should arrive.
+                </p>
+              </div>
               <button
                 onClick={() => setIsLocationModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                aria-label="Close"
+                className="p-1.5 -mr-1.5 rounded-lg text-ink-400 hover:text-ink-900 hover:bg-surface-sunken transition-colors"
               >
-                ✕
+                <X className="w-[18px] h-[18px]" />
               </button>
             </div>
 
-            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-72 overflow-y-auto">
               {user?.addresses && user.addresses.length > 0 ? (
-                user.addresses.map((addr) => (
-                  <div
-                    key={addr.id}
-                    onClick={() => {
-                      dispatch(setSelectedAddress(addr));
-                      setIsLocationModalOpen(false);
-                    }}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                      selectedAddress?.id === addr.id
-                        ? 'border-orange-500 bg-orange-50/50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 block">{addr.title}</span>
-                      <span className="text-xs text-slate-600">
-                        {addr.street}, {addr.city}, {addr.state} {addr.zipCode}
-                      </span>
-                    </div>
-                    {selectedAddress?.id === addr.id && (
-                      <span className="w-2.5 h-2.5 rounded-full bg-orange-600" />
-                    )}
-                  </div>
-                ))
+                user.addresses.map((addr) => {
+                  const isSelected = selectedAddress?.id === addr.id;
+                  return (
+                    <button
+                      key={addr.id}
+                      onClick={() => {
+                        dispatch(setSelectedAddress(addr));
+                        setIsLocationModalOpen(false);
+                      }}
+                      className={`w-full p-3.5 rounded-control border text-left transition-colors flex items-start gap-3 ${
+                        isSelected
+                          ? 'border-brand-500 bg-brand-50'
+                          : 'border-surface-line hover:border-ink-400'
+                      }`}
+                    >
+                      <MapPin
+                        className={`w-[18px] h-[18px] mt-0.5 shrink-0 ${
+                          isSelected ? 'text-brand-500' : 'text-ink-400'
+                        }`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm font-semibold text-ink-900 block">
+                          {addr.title}
+                        </span>
+                        <span className="text-[13px] text-ink-500 block leading-snug">
+                          {addr.street}, {addr.city}, {addr.state} {addr.zipCode}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <span className="w-2 h-2 rounded-full bg-brand-500 mt-2 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })
               ) : (
-                <p className="text-xs text-slate-500">No saved addresses. Sign in or edit profile to add one.</p>
+                <p className="text-[13px] text-ink-500 py-4 text-center">
+                  No saved addresses yet.
+                </p>
               )}
             </div>
 
@@ -375,9 +400,10 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
                 setIsLocationModalOpen(false);
                 onNavigate('profile');
               }}
-              className="mt-4 w-full py-2 text-xs font-semibold text-orange-600 hover:bg-orange-50 rounded-xl transition-colors text-center block"
+              className="btn btn-secondary w-full mt-4"
             >
-              + Manage Saved Addresses in Profile
+              Manage addresses
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>

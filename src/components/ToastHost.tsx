@@ -22,7 +22,7 @@ const VARIANTS: Record<
   success: {
     label: 'Success',
     icon: CheckCircle2,
-    chip: 'bg-[#ECFDF5] text-[#059669]',
+    chip: 'bg-success-50 text-success-500',
     bar: 'bg-[#059669]',
   },
   error: {
@@ -40,13 +40,13 @@ const VARIANTS: Record<
   info: {
     label: 'Info',
     icon: Info,
-    chip: 'bg-[#FFF5F0] text-[#FF5200]',
-    bar: 'bg-[#FF5200]',
+    chip: 'bg-brand-50 text-brand-500',
+    bar: 'bg-brand-500',
   },
   loading: {
     label: 'Working',
     icon: Loader2,
-    chip: 'bg-slate-100 text-slate-600',
+    chip: 'bg-surface-sunken text-ink-600',
     bar: 'bg-slate-400',
     spin: true,
   },
@@ -70,16 +70,16 @@ const ToastCard: React.FC<{ toast: ToastItem }> = ({ toast }) => {
     >
       <div className="flex items-start gap-3 p-3.5">
         <div
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${variant.chip}`}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-control ${variant.chip}`}
         >
           <Icon size={18} strokeWidth={2.5} className={variant.spin ? 'animate-spin' : ''} />
         </div>
 
         <div className="min-w-0 flex-1 pt-0.5">
-          <span className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+          <span className="block text-[12px] font-semibold uppercase tracking-wider text-ink-400">
             {variant.label}
           </span>
-          <p className="mt-0.5 text-[13px] font-bold leading-snug text-[#1F2937]">
+          <p className="mt-0.5 text-[13px] font-bold leading-snug text-ink-800">
             {toast.message}
           </p>
         </div>
@@ -88,14 +88,14 @@ const ToastCard: React.FC<{ toast: ToastItem }> = ({ toast }) => {
           type="button"
           onClick={() => dismissToast(toast.id)}
           aria-label="Dismiss notification"
-          className="-mr-0.5 -mt-0.5 shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          className="-mr-0.5 -mt-0.5 shrink-0 rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-surface-sunken hover:text-ink-600"
         >
           <X size={14} strokeWidth={3} />
         </button>
       </div>
 
       {toast.duration > 0 && (
-        <div className="absolute inset-x-0 bottom-0 h-1 bg-slate-100">
+        <div className="absolute inset-x-0 bottom-0 h-1 bg-surface-sunken">
           <div
             className={`toast-progress h-full ${variant.bar}`}
             style={{ animationDuration: `${toast.duration}ms` }}

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   Sparkles,
   X,
@@ -6,12 +7,9 @@ import {
   ShoppingBag,
   Bot,
   User,
-  CheckCircle2,
   Tag,
   ArrowRight,
-  Flame,
-  Zap,
-  Info,
+  RefreshCw,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../hooks/reduxHooks';
 import {
@@ -32,7 +30,30 @@ export const AIFoodAssistant: React.FC<AIFoodAssistantProps> = ({ onNavigateChec
   const [input, setInput] = useState('');
   const [confirmingRec, setConfirmingRec] = useState<any>(null);
 
-  if (!isAssistantOpen) return null;
+  // Escape closes the panel and the page behind it stops scrolling, matching
+  // the cart drawer. Escape is ignored while the confirm dialog is stacked on
+  // top so the first press dismisses that dialog rather than the whole panel.
+  useEffect(() => {
+    if (!isAssistantOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (confirmingRec) {
+        setConfirmingRec(null);
+        return;
+      }
+      dispatch(toggleAIAssistant(false));
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isAssistantOpen, confirmingRec, dispatch]);
 
   const handleSend = (promptText?: string) => {
     const query = promptText || input;
@@ -82,67 +103,87 @@ export const AIFoodAssistant: React.FC<AIFoodAssistantProps> = ({ onNavigateChec
   ];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col border-l border-slate-100">
-        
+    <AnimatePresence>
+      {isAssistantOpen && (
+    <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+        onClick={() => dispatch(toggleAIAssistant(false))}
+        className="absolute inset-0 bg-ink-900/40 backdrop-blur-xs"
+        aria-hidden="true"
+      />
+
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label="AI food assistant"
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'spring', stiffness: 420, damping: 40 }}
+        className="relative w-full max-w-lg bg-white h-full shadow-overlay flex flex-col"
+      >
+
         {/* Drawer Header */}
-        <div className="p-4 sm:p-5 bg-[#1F2937] text-white flex items-center justify-between border-b border-slate-800">
+        <div className="px-5 py-4 bg-white border-b border-surface-line flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#FF5200] flex items-center justify-center text-white shadow-md shadow-[#FF5200]/20">
-              <Sparkles className="w-5 h-5 text-amber-100" />
+            <div className="w-10 h-10 rounded-control bg-brand-500 flex items-center justify-center text-white shrink-0">
+              <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold flex items-center gap-1.5">
-                CraveAI Assistant <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-extrabold uppercase">3.6 Flash</span>
-              </h2>
-              <p className="text-xs text-slate-300">Natural language food curation & smart savings</p>
+              <h2 className="text-[15px] font-semibold text-ink-900">AI food assistant</h2>
+              <p className="text-[13px] text-ink-500">Describe a craving in your own words</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => dispatch(clearAIMessages())}
-              className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition-colors"
+              className="text-[13px] font-medium text-ink-500 hover:text-ink-900 px-2 py-1 rounded-md hover:bg-surface-sunken transition-colors"
             >
               Clear
             </button>
             <button
               onClick={() => dispatch(toggleAIAssistant(false))}
-              className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              aria-label="Close assistant"
+              className="p-1.5 rounded-lg text-ink-400 hover:text-ink-900 hover:bg-surface-sunken transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-[18px] h-[18px]" />
             </button>
           </div>
         </div>
 
         {/* Chat History */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-surface-sunken">
           {messages.map((msg) => (
             <div
               key={msg.id}
               className={`flex gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.sender === 'ai' && (
-                <div className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-1">
+                <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center shrink-0 mt-1">
                   <Bot className="w-4 h-4" />
                 </div>
               )}
 
               <div
-                className={`max-w-[85%] rounded-2xl p-3.5 text-xs sm:text-sm leading-relaxed ${
+                className={`max-w-[85%] rounded-card p-3.5 text-sm leading-relaxed ${
                   msg.sender === 'user'
-                    ? 'bg-slate-900 text-white rounded-br-none shadow-sm'
-                    : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none shadow-xs'
+                    ? 'bg-ink-900 text-white rounded-br-sm'
+                    : 'bg-white border border-surface-line text-ink-800 rounded-bl-sm'
                 }`}
               >
-                <p className="font-medium whitespace-pre-line">{msg.text}</p>
+                <p className="whitespace-pre-line">{msg.text}</p>
 
                 {/* AI Structured Recommendation Card */}
                 {msg.recommendation && (
-                  <div className="mt-3 pt-3 border-t border-slate-100 space-y-3">
-                    
-                    <p className="text-xs text-slate-600 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/60 font-normal">
-                      💡 <strong>AI Analysis:</strong> {msg.recommendation.explanation}
+                  <div className="mt-3 pt-3 border-t border-surface-line space-y-3">
+
+                    <p className="text-[13px] text-ink-600 bg-surface-sunken p-2.5 rounded-control leading-relaxed">
+                      {msg.recommendation.explanation}
                     </p>
 
                     {/* Suggested Items */}
@@ -150,7 +191,7 @@ export const AIFoodAssistant: React.FC<AIFoodAssistantProps> = ({ onNavigateChec
                       {msg.recommendation.suggestedItems.map((item, idx) => (
                         <div
                           key={idx}
-                          className="flex gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 items-center"
+                          className="flex gap-3 p-2.5 rounded-control border border-surface-line items-center"
                         >
                           <img
                             src={item.foodItem.image}
@@ -159,18 +200,18 @@ export const AIFoodAssistant: React.FC<AIFoodAssistantProps> = ({ onNavigateChec
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-1">
-                              <h4 className="font-bold text-slate-900 text-xs truncate">
+                              <h4 className="text-[13px] font-semibold text-ink-900 truncate">
                                 {item.foodItem.name}
                               </h4>
-                              <span className="font-bold text-orange-600 text-xs">
+                              <span className="text-[13px] font-semibold text-ink-900 tnum shrink-0">
                                 ₹{item.foodItem.price}
                               </span>
                             </div>
-                            <p className="text-[10px] text-slate-500 truncate">
+                            <p className="text-[12px] text-ink-500 truncate">
                               {item.restaurant?.name || item.foodItem.restaurantName}
                             </p>
-                            <p className="text-[10px] text-amber-800 mt-0.5 italic truncate">
-                              "{item.reason}"
+                            <p className="text-[12px] text-brand-600 mt-0.5 truncate">
+                              {item.reason}
                             </p>
                           </div>
                         </div>
@@ -179,9 +220,12 @@ export const AIFoodAssistant: React.FC<AIFoodAssistantProps> = ({ onNavigateChec
 
                     {/* Coupon Badge */}
                     {msg.recommendation.suggestedCoupon && (
-                      <div className="flex items-center gap-2 p-2 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 text-xs font-semibold">
-                        <Tag className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Suggested Coupon: <strong>{msg.recommendation.suggestedCoupon.code}</strong> ({msg.recommendation.suggestedCoupon.description})</span>
+                      <div className="flex items-center gap-2 p-2.5 bg-success-50 text-success-600 rounded-control text-[13px]">
+                        <Tag className="w-4 h-4 shrink-0" />
+                        <span>
+                          Coupon <strong className="font-semibold">{msg.recommendation.suggestedCoupon.code}</strong>{' '}
+                          — {msg.recommendation.suggestedCoupon.description}
+                        </span>
                       </div>
                     )}
 
@@ -189,11 +233,11 @@ export const AIFoodAssistant: React.FC<AIFoodAssistantProps> = ({ onNavigateChec
                     <div className="pt-1">
                       <button
                         onClick={() => setConfirmingRec(msg.recommendation)}
-                        className="w-full py-2.5 px-4 bg-[#FF5200] hover:bg-[#e04800] text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition-all"
+                        className="btn btn-primary w-full"
                       >
                         <ShoppingBag className="w-4 h-4" />
-                        <span>Review & Confirm AI Selection</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        Review selection
+                        <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -201,7 +245,7 @@ export const AIFoodAssistant: React.FC<AIFoodAssistantProps> = ({ onNavigateChec
               </div>
 
               {msg.sender === 'user' && (
-                <div className="w-8 h-8 rounded-xl bg-slate-800 text-white flex items-center justify-center shrink-0 shadow-sm mt-1">
+                <div className="w-8 h-8 rounded-full bg-ink-800 text-white flex items-center justify-center shrink-0 mt-1">
                   <User className="w-4 h-4" />
                 </div>
               )}
@@ -210,35 +254,30 @@ export const AIFoodAssistant: React.FC<AIFoodAssistantProps> = ({ onNavigateChec
 
           {loading && (
             <div className="flex gap-3 items-center">
-              <div className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0 animate-pulse">
+              <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center shrink-0">
                 <Bot className="w-4 h-4" />
               </div>
-              <div className="bg-white p-3 rounded-2xl border border-slate-200 text-xs text-slate-600 flex items-center gap-2 shadow-xs">
-                <Zap className="w-4 h-4 text-amber-500 animate-spin" />
-                <span>CraveAI is searching restaurants, matching menus & calculating discounts...</span>
+              <div className="bg-white p-3 rounded-card border border-surface-line text-[13px] text-ink-600 flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-brand-500 animate-spin shrink-0" />
+                <span>Searching menus and matching offers…</span>
               </div>
             </div>
           )}
         </div>
 
         {/* Quick Sample Chips */}
-        <div className="p-3 bg-white border-t border-slate-100 space-y-2">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Try Quick Prompts:</p>
-          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+        <div className="px-4 pt-3 bg-white border-t border-surface-line">
+          <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar">
             {samplePrompts.map((prompt, i) => (
-              <button
-                key={i}
-                onClick={() => handleSend(prompt)}
-                className="whitespace-nowrap px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 hover:bg-orange-50 hover:text-orange-600 text-slate-700 border border-slate-200 transition-colors"
-              >
-                ✨ {prompt}
+              <button key={i} onClick={() => handleSend(prompt)} className="chip shrink-0">
+                {prompt}
               </button>
             ))}
           </div>
         </div>
 
         {/* Input Bar */}
-        <div className="p-4 bg-white border-t border-slate-200">
+        <div className="p-4 bg-white border-t border-surface-line">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -250,79 +289,87 @@ export const AIFoodAssistant: React.FC<AIFoodAssistantProps> = ({ onNavigateChec
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask CraveAI (e.g., 'Spicy pizza under ₹350')..."
-              className="flex-1 py-2.5 px-4 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+              placeholder="e.g. spicy pizza under ₹350"
+              aria-label="Message the AI assistant"
+              className="field flex-1"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="p-2.5 bg-[#FF5200] hover:bg-[#e04800] text-white rounded-xl disabled:opacity-40 transition-colors shadow-2xs"
+              aria-label="Send"
+              className="btn btn-primary px-3 shrink-0"
             >
               <Send className="w-4 h-4" />
             </button>
           </form>
         </div>
 
-      </div>
+      </motion.div>
 
       {/* Confirmation Modal (Ensures user explicitly confirms before items enter checkout) */}
       {confirmingRec && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-100 relative">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-ink-900/50 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-panel max-w-md w-full shadow-overlay p-6 relative animate-popIn">
             <button
               onClick={() => setConfirmingRec(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+              aria-label="Close"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-ink-400 hover:text-ink-900 hover:bg-surface-sunken transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-[18px] h-[18px]" />
             </button>
 
-            <div className="flex items-center gap-2 text-orange-600 mb-2">
-              <CheckCircle2 className="w-5 h-5" />
-              <span className="text-xs font-bold uppercase tracking-wider">User Confirmation Required</span>
-            </div>
-
-            <h3 className="text-lg font-extrabold text-slate-900 mb-1">Confirm AI Order Selection</h3>
-            <p className="text-xs text-slate-500 mb-4">
-              CraveAI selected these items matching your prompt. Confirm to add them to your cart and proceed.
+            <h3 className="text-lg font-bold text-ink-900 tracking-tight pr-8">Confirm your selection</h3>
+            <p className="text-[13px] text-ink-500 mt-1 mb-4">
+              These items match your request. Confirm to add them to your cart.
             </p>
 
             <div className="space-y-2 max-h-56 overflow-y-auto mb-4 pr-1">
               {confirmingRec.suggestedItems.map((item: any, idx: number) => (
-                <div key={idx} className="flex justify-between items-center p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                  <div>
-                    <span className="font-bold text-slate-900 block">{item.foodItem.name}</span>
-                    <span className="text-slate-500">Qty: {item.quantity || 1} • {item.restaurant?.name}</span>
+                <div
+                  key={idx}
+                  className="flex justify-between items-center gap-3 p-3 rounded-control border border-surface-line"
+                >
+                  <div className="min-w-0">
+                    <span className="text-sm font-medium text-ink-900 block truncate">
+                      {item.foodItem.name}
+                    </span>
+                    <span className="text-[13px] text-ink-500">
+                      Qty {item.quantity || 1} · {item.restaurant?.name}
+                    </span>
                   </div>
-                  <span className="font-bold text-slate-900">₹{item.foodItem.price * (item.quantity || 1)}</span>
+                  <span className="text-sm font-semibold text-ink-900 tnum shrink-0">
+                    ₹{item.foodItem.price * (item.quantity || 1)}
+                  </span>
                 </div>
               ))}
             </div>
 
             {confirmingRec.suggestedCoupon && (
-              <div className="mb-4 p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 flex justify-between items-center">
-                <span>Coupon <strong>{confirmingRec.suggestedCoupon.code}</strong></span>
-                <span className="font-bold text-emerald-700">Applied</span>
+              <div className="mb-4 p-3 bg-success-50 rounded-control text-[13px] text-success-600 flex justify-between items-center">
+                <span>
+                  Coupon <strong className="font-semibold">{confirmingRec.suggestedCoupon.code}</strong>
+                </span>
+                <span className="font-semibold">Applied</span>
               </div>
             )}
 
             <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmingRec(null)}
-                className="flex-1 py-2.5 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-700 transition-colors"
-              >
+              <button onClick={() => setConfirmingRec(null)} className="btn btn-secondary flex-1">
                 Cancel
               </button>
               <button
                 onClick={() => handleConfirmOrder(confirmingRec)}
-                className="flex-1 py-2.5 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                className="btn btn-primary flex-1"
               >
-                <span>Add to Cart & Checkout</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                Add to cart
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
+      )}
+    </AnimatePresence>
   );
 };

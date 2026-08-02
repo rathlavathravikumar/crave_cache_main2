@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Compass, Clock, DollarSign, Heart, TrendingUp, Search, RefreshCw, Layers, CheckCircle } from 'lucide-react';
+import { Sparkles, Search, RefreshCw } from 'lucide-react';
 import { RecommendationSection, FoodItem } from '../types';
 import { FoodCard } from './FoodCard';
 import { useAppSelector } from '../hooks/reduxHooks';
@@ -67,25 +67,17 @@ export const AIRecommendationEngine: React.FC = () => {
   const currentSection = sections.find((s) => s.id === activeTab) || sections[0];
 
   return (
-    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-orange-100 shadow-md space-y-6">
-      
-      {/* Top Engine Banner */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-3 py-1 rounded-full bg-orange-100 text-[#FF5200] text-xs font-black tracking-wide flex items-center gap-1.5 uppercase">
-              <Sparkles className="w-3.5 h-3.5 text-[#FF5200] animate-pulse" /> AI Curation Engine
-            </span>
-            <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1">
-              <Clock className="w-3 h-3 text-orange-600" /> {timeOfDay} Focus
-            </span>
-          </div>
+    <section className="space-y-6">
 
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Personalized For <span className="text-[#FF5200]">{user?.name?.split(' ')[0] || 'You'}</span>
+      {/* Section header + natural-language prompt */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
+        <div>
+          <h2 className="section-title">
+            Recommended for {user?.name?.split(' ')[0] || 'you'}
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Analyzed {user?.name ? 'your past orders' : 'trending taste profiles'}, diet preferences & time of day
+          <p className="section-sub flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-brand-500 shrink-0" />
+            Curated from your orders, diet preferences and the {timeOfDay.toLowerCase()} menu
           </p>
         </div>
 
@@ -96,69 +88,66 @@ export const AIRecommendationEngine: React.FC = () => {
               e.preventDefault();
               if (query.trim()) fetchRecommendations(query);
             }}
-            className="flex items-center relative"
+            className="relative flex items-center"
           >
-            <Search className="w-4 h-4 text-orange-500 absolute left-3.5 top-3.5" />
+            <Search className="w-[18px] h-[18px] text-ink-400 absolute left-3.5 pointer-events-none" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask AI: e.g. 'I want something healthy under ₹300'..."
-              className="w-full pl-10 pr-24 py-2.5 text-xs font-medium bg-orange-50/50 hover:bg-orange-50 focus:bg-white border border-orange-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#FF5200]/20 focus:border-[#FF5200] transition-all"
+              placeholder="Ask AI: something healthy under ₹300"
+              aria-label="Ask the AI for a recommendation"
+              className="field pl-11 pr-[86px]"
             />
             <button
               type="submit"
               disabled={isSearching}
-              className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-[#FF5200] hover:bg-[#e04800] text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm"
+              className="btn btn-primary btn-sm absolute right-1.5"
             >
-              {isSearching ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-              <span>Ask</span>
+              {isSearching ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              Ask
             </button>
           </form>
 
           {/* Quick Prompt Pills */}
-          <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 text-[10px] font-bold no-scrollbar">
-            <span className="text-slate-400 shrink-0">Try:</span>
-            {[
-              '🥗 Healthy Choices',
-              '💰 Dinner under ₹300',
-              '🌶️ Spicy Veg',
-              '⭐ Best Rated Biryani',
-            ].map((pill, i) => (
-              <button
-                key={i}
-                onClick={() => handleQuickPrompt(pill.replace(/^[^\w]+/, ''))}
-                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-orange-100 text-slate-700 hover:text-orange-900 border border-slate-200 hover:border-orange-200 whitespace-nowrap transition-all"
-              >
-                {pill}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 mt-2.5 overflow-x-auto pb-1 no-scrollbar">
+            {['Healthy choices', 'Dinner under ₹300', 'Spicy veg', 'Best rated biryani'].map(
+              (pill) => (
+                <button
+                  key={pill}
+                  onClick={() => handleQuickPrompt(pill)}
+                  className="chip shrink-0"
+                >
+                  {pill}
+                </button>
+              )
+            )}
           </div>
         </div>
       </div>
 
       {/* AI Prompt Query Result View */}
       {aiQueryResult.summary && (
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/5 border border-orange-200/80 space-y-3 animate-fadeIn">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-black text-orange-900">
-              <Sparkles className="w-4 h-4 text-[#FF5200]" />
-              <span>AI Curation Summary</span>
-            </div>
+        <div className="rounded-card border border-brand-100 bg-brand-50 p-5 space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <p className="text-sm text-ink-800 leading-relaxed flex-1">
+              <Sparkles className="w-4 h-4 text-brand-500 inline-block mr-1.5 -mt-0.5" />
+              {aiQueryResult.summary}
+            </p>
             <button
               onClick={() => setAiQueryResult({ summary: null, foods: [] })}
-              className="text-[11px] font-bold text-slate-400 hover:text-slate-600"
+              className="text-[13px] font-medium text-ink-500 hover:text-ink-900 shrink-0"
             >
-              Clear AI Search
+              Clear
             </button>
           </div>
 
-          <p className="text-xs text-slate-700 leading-relaxed font-medium">
-            {aiQueryResult.summary}
-          </p>
-
           {aiQueryResult.foods.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 pt-1">
               {aiQueryResult.foods.map((food) => (
                 <FoodCard key={food.id} foodItem={food} />
               ))}
@@ -168,53 +157,46 @@ export const AIRecommendationEngine: React.FC = () => {
       )}
 
       {/* Main Tabs Navigation */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-100 no-scrollbar">
-        {sections.map((section) => (
-          <button
-            key={section.id}
-            onClick={() => setActiveTab(section.id)}
-            className={`px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-              activeTab === section.id
-                ? 'bg-[#FF5200] text-white shadow-md shadow-[#FF5200]/20'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
-            }`}
-          >
-            <span>{section.title}</span>
-            {section.badge && (
-              <span
-                className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase ${
-                  activeTab === section.id
-                    ? 'bg-white/20 text-white'
-                    : 'bg-orange-100 text-orange-800'
-                }`}
-              >
-                {section.badge}
-              </span>
-            )}
-          </button>
-        ))}
+      <div
+        role="tablist"
+        aria-label="Recommendation categories"
+        className="flex items-center gap-6 overflow-x-auto border-b border-surface-line no-scrollbar"
+      >
+        {sections.map((section) => {
+          const isActive = activeTab === section.id;
+          return (
+            <button
+              key={section.id}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveTab(section.id)}
+              className={`relative pb-3 text-sm whitespace-nowrap transition-colors ${
+                isActive
+                  ? 'font-semibold text-brand-600'
+                  : 'font-medium text-ink-500 hover:text-ink-900'
+              }`}
+            >
+              {section.title}
+              {isActive && (
+                <span className="absolute inset-x-0 -bottom-px h-0.5 bg-brand-500 rounded-full" />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Section Content Display */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((n) => (
-            <div key={n} className="h-32 bg-slate-100 rounded-2xl animate-pulse" />
+            <div key={n} className="h-36 rounded-card skeleton" />
           ))}
         </div>
       ) : currentSection ? (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-extrabold text-slate-900">{currentSection.title}</h3>
-              <p className="text-xs text-slate-500">{currentSection.subtitle}</p>
-            </div>
-            <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-lg">
-              {currentSection.items.length} Curated Items
-            </span>
-          </div>
+          <p className="text-[13px] text-ink-500">{currentSection.subtitle}</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             {currentSection.items.map((food) => (
               <FoodCard key={food.id} foodItem={food} />
             ))}
@@ -224,37 +206,48 @@ export const AIRecommendationEngine: React.FC = () => {
 
       {/* Frequently Ordered Together Pairings */}
       {combos.length > 0 && (
-        <div className="pt-4 border-t border-slate-100 space-y-4">
+        <div className="pt-6 border-t border-surface-line space-y-4">
           <div>
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-[#FF5200]" /> Frequently Ordered Together
+            <h3 className="text-[17px] font-bold text-ink-900 tracking-tight">
+              Frequently ordered together
             </h3>
-            <p className="text-xs text-slate-500">Perfect pairing suggestions with multi-item savings</p>
+            <p className="section-sub">Pairings that save on multi-item orders</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {combos.map((combo) => (
-              <div
-                key={combo.id}
-                className="p-4 rounded-2xl bg-orange-50/50 border border-orange-200/60 flex flex-col justify-between gap-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-extrabold text-slate-900 block">{combo.title}</span>
-                    <span className="text-[11px] font-medium text-slate-500">{combo.subtitle}</span>
+              <div key={combo.id} className="card p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="text-sm font-semibold text-ink-900 block truncate">
+                      {combo.title}
+                    </span>
+                    <span className="text-[13px] text-ink-500">{combo.subtitle}</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-black">
+                  <span className="shrink-0 px-2 py-0.5 rounded-md bg-success-50 text-success-600 text-[12px] font-semibold">
                     {combo.badge}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   {combo.items.map((item: FoodItem) => (
-                    <div key={item.id} className="bg-white p-2.5 rounded-xl border border-slate-200 flex items-center gap-2">
-                      <img src={item.image} alt={item.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-2.5 p-2 rounded-control bg-surface-sunken"
+                    >
+                      <img
+                        src={item.image}
+                        alt=""
+                        loading="lazy"
+                        className="w-10 h-10 rounded-lg object-cover shrink-0"
+                      />
                       <div className="min-w-0 flex-1">
-                        <span className="text-xs font-bold text-slate-800 block truncate">{item.name}</span>
-                        <span className="text-[11px] font-extrabold text-slate-900">₹{item.price}</span>
+                        <span className="text-[13px] font-medium text-ink-900 block truncate">
+                          {item.name}
+                        </span>
+                        <span className="text-[13px] font-semibold text-ink-900 tnum">
+                          ₹{item.price}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -265,6 +258,6 @@ export const AIRecommendationEngine: React.FC = () => {
         </div>
       )}
 
-    </div>
+    </section>
   );
 };

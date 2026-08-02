@@ -48,10 +48,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       </div>
     )}
 
-    <h3 className="text-base font-black tracking-tight text-ink-900">{title}</h3>
+    <h3 className="text-base font-bold tracking-tight text-ink-900">{title}</h3>
 
     {description && (
-      <p className="mt-1.5 max-w-sm text-xs font-medium leading-relaxed text-ink-500">
+      <p className="mt-1.5 max-w-sm text-[13px] font-medium leading-relaxed text-ink-500">
         {description}
       </p>
     )}

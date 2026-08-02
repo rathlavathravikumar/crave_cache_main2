@@ -125,9 +125,9 @@ export const ConfirmDialogHost: React.FC = () => {
           <Icon className="h-5 w-5" strokeWidth={2.5} />
         </div>
         <div className="min-w-0 flex-1 pt-0.5">
-          <h2 className="text-sm font-black tracking-tight text-ink-900">{pending?.title}</h2>
+          <h2 className="text-sm font-bold tracking-tight text-ink-900">{pending?.title}</h2>
           {pending?.description && (
-            <p className="mt-1 text-xs font-medium leading-relaxed text-ink-500">
+            <p className="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
               {pending.description}
             </p>
           )}

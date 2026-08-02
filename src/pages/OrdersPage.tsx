@@ -87,17 +87,17 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-16">
       
-      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+      <div className="flex items-center justify-between border-b border-surface-line pb-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-            <Clock className="w-6 h-6 text-orange-600" /> My Food Orders
+          <h1 className="text-2xl font-bold text-ink-900 flex items-center gap-2">
+            <Clock className="w-6 h-6 text-brand-600" /> My Food Orders
           </h1>
-          <p className="text-xs text-slate-500">Track active deliveries, reorder favorites, and rate your meals</p>
+          <p className="text-[13px] text-ink-500">Track active deliveries, reorder favorites, and rate your meals</p>
         </div>
 
         <button
           onClick={onNavigateHome}
-          className="py-2 px-4 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs"
+          className="py-2 px-4 bg-brand-500 hover:bg-brand-700 text-white font-bold text-[13px] rounded-control transition-all shadow-card"
         >
           Order Food Now
         </button>
@@ -106,14 +106,14 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((n) => (
-            <div key={n} className="h-32 bg-slate-200 rounded-2xl animate-pulse" />
+            <div key={n} className="h-32 bg-slate-200 rounded-card animate-pulse" />
           ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="text-center py-16 bg-slate-50 rounded-3xl border border-slate-200 space-y-3">
+        <div className="text-center py-16 bg-surface-sunken rounded-panel border border-surface-line space-y-3">
           <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="text-base font-bold text-slate-900">No Orders Placed Yet</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <h3 className="text-base font-bold text-ink-900">No Orders Placed Yet</h3>
+          <p className="text-[13px] text-ink-500 max-w-sm mx-auto">
             You haven't ordered any food yet. Ask our AI Assistant or explore top restaurants!
           </p>
         </div>
@@ -122,22 +122,22 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
           {orders.map((order) => (
             <div
               key={order.id}
-              className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all space-y-4"
+              className="bg-white rounded-panel p-5 border border-surface-line/80 shadow-card hover:shadow-md transition-all space-y-4"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-surface-line pb-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-slate-900 text-base">{order.restaurantName}</h3>
-                    <span className="text-[11px] text-slate-400 font-mono">#{order.id}</span>
+                    <h3 className="font-semibold text-ink-900 text-base">{order.restaurantName}</h3>
+                    <span className="text-[13px] text-ink-400 font-mono">#{order.id}</span>
                   </div>
-                  <span className="text-[11px] text-slate-500 block">
+                  <span className="text-[13px] text-ink-500 block">
                     {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    className={`px-3 py-1 rounded-full text-[13px] font-bold ${
                       order.status === 'Delivered'
                         ? 'bg-emerald-100 text-emerald-800'
                         : order.status === 'Cancelled'
@@ -151,13 +151,13 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
               </div>
 
               {/* Items List Summary */}
-              <div className="space-y-1.5 text-xs text-slate-700">
+              <div className="space-y-1.5 text-[13px] text-ink-600">
                 {order.items.map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center">
-                    <span className="font-semibold text-slate-800">
+                    <span className="font-semibold text-ink-800">
                       {item.quantity}x {item.foodItem.name}
                     </span>
-                    <span className="font-bold text-slate-900">
+                    <span className="font-bold text-ink-900">
                       ₹{item.itemTotalPrice * item.quantity}
                     </span>
                   </div>
@@ -166,7 +166,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
 
               {/* Submitted Review Display (if reviewed) */}
               {order.reviewed && order.rating && (
-                <div className="bg-amber-50/70 border border-amber-200/70 rounded-2xl p-3.5 space-y-1 text-xs">
+                <div className="bg-amber-50/70 border border-amber-200/70 rounded-card p-3.5 space-y-1 text-[13px]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((s) => (
@@ -183,28 +183,28 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
                     </div>
                     <button
                       onClick={() => handleOpenReview(order)}
-                      className="text-orange-600 font-bold hover:underline text-[11px]"
+                      className="text-brand-600 font-bold hover:underline text-[13px]"
                     >
                       Edit Review
                     </button>
                   </div>
                   {order.reviewComment && (
-                    <p className="text-slate-700 italic">"{order.reviewComment}"</p>
+                    <p className="text-ink-600 italic">"{order.reviewComment}"</p>
                   )}
                 </div>
               )}
 
               {/* Order Footer Actions */}
-              <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="text-xs font-black text-slate-900">
-                  Total Paid: <span className="text-orange-600 text-sm">₹{order.totalAmount}</span>
+              <div className="pt-3 border-t border-surface-line flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="text-[13px] font-bold text-ink-900">
+                  Total Paid: <span className="text-brand-600 text-sm">₹{order.totalAmount}</span>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
                   {order.status === 'Delivered' && !order.reviewed && (
                     <button
                       onClick={() => handleOpenReview(order)}
-                      className="py-2 px-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-xs"
+                      className="py-2 px-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[13px] rounded-control transition-all flex items-center gap-1.5 shadow-card"
                     >
                       <Star className="w-3.5 h-3.5 fill-current" />
                       <span>Rate & Review</span>
@@ -213,7 +213,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
 
                   <button
                     onClick={() => setSelectedTrackOrder(order)}
-                    className="py-2 px-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-2xs"
+                    className="py-2 px-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[13px] rounded-control transition-all flex items-center gap-1.5 shadow-card"
                   >
                     <Eye className="w-3.5 h-3.5 text-amber-400" />
                     <span>Track Live Progress</span>
@@ -221,7 +221,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
 
                   <button
                     onClick={() => handleReorder(order)}
-                    className="py-2 px-3.5 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
+                    className="py-2 px-3.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-100 font-bold text-[13px] rounded-control transition-all flex items-center gap-1.5"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Reorder</span>
@@ -245,15 +245,15 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
       {/* Review & Star Rating Modal */}
       {reviewModalOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-white rounded-panel max-w-md w-full p-6 shadow-2xl border border-surface-line space-y-5 animate-popIn">
+            <div className="flex items-center justify-between border-b border-surface-line pb-3">
               <div>
-                <h3 className="text-base font-extrabold text-slate-900">Rate & Review Meal</h3>
-                <p className="text-xs text-slate-500">{reviewModalOrder.restaurantName} (Order #{reviewModalOrder.id})</p>
+                <h3 className="text-base font-semibold text-ink-900">Rate & Review Meal</h3>
+                <p className="text-[13px] text-ink-500">{reviewModalOrder.restaurantName} (Order #{reviewModalOrder.id})</p>
               </div>
               <button
                 onClick={() => setReviewModalOrder(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm"
+                className="w-8 h-8 rounded-full bg-surface-sunken hover:bg-slate-200 flex items-center justify-center text-ink-600 font-bold text-sm"
               >
                 ✕
               </button>
@@ -261,17 +261,17 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
 
             <form onSubmit={handleSubmitReview} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2">Overall Star Rating</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-2">Overall Star Rating</label>
                 <div className="flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
                       onClick={() => setRating(star)}
-                      className={`p-2.5 rounded-xl text-lg font-bold border transition-all flex items-center gap-1 ${
+                      className={`p-2.5 rounded-control text-lg font-bold border transition-all flex items-center gap-1 ${
                         rating >= star
                           ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
-                          : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                          : 'bg-surface-sunken text-ink-400 border-surface-line hover:bg-surface-sunken'
                       }`}
                     >
                       <Star className={`w-4 h-4 ${rating >= star ? 'fill-current' : ''}`} />
@@ -282,14 +282,14 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Your Detailed Feedback</label>
+                <label className="block text-[13px] font-bold text-ink-600 mb-1">Your Detailed Feedback</label>
                 <textarea
                   required
                   rows={3}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="How was the food taste, packaging quality, and delivery speed?"
-                  className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-orange-500 text-slate-800"
+                  className="w-full p-3 text-[13px] bg-surface-sunken border border-surface-line rounded-control outline-none focus:border-brand-500 text-ink-800"
                 />
               </div>
 
@@ -297,14 +297,14 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigateHome }) => {
                 <button
                   type="button"
                   onClick={() => setReviewModalOrder(null)}
-                  className="flex-1 py-2.5 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-700"
+                  className="flex-1 py-2.5 text-[13px] font-semibold border border-surface-line rounded-control hover:bg-surface-sunken text-ink-600"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingReview}
-                  className="flex-1 py-2.5 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-xs transition-all disabled:opacity-50"
+                  className="flex-1 py-2.5 text-[13px] font-bold bg-brand-500 hover:bg-brand-700 text-white rounded-control shadow-card transition-all disabled:opacity-50"
                 >
                   {submittingReview ? 'Submitting...' : 'Submit Review'}
                 </button>

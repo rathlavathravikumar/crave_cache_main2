@@ -143,13 +143,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 py-2 px-3 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
+          className="flex items-center gap-2 py-2 px-3 bg-white rounded-control border border-surface-line text-[13px] font-bold text-ink-600 hover:bg-surface-sunken transition-colors shadow-card"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Cart</span>
         </button>
 
-        <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+        <div className="flex items-center gap-1 text-[13px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
           <ShieldCheck className="w-4 h-4" />
           <span>256-Bit SSL Encrypted Checkout</span>
         </div>
@@ -161,38 +161,38 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
         <div className="lg:col-span-7 space-y-6">
           
           {/* Delivery Address Card */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-orange-600" /> Delivery Address
+          <div className="bg-white rounded-panel p-6 border border-surface-line/80 shadow-card space-y-3">
+            <div className="flex items-center justify-between border-b border-surface-line pb-3">
+              <h3 className="text-base font-bold text-ink-900 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-brand-600" /> Delivery Address
               </h3>
-              <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-lg">
+              <span className="text-[13px] font-bold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-lg">
                 Estimated 25 Mins
               </span>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
-              <div className="font-bold text-slate-900 text-sm">
+            <div className="p-4 bg-surface-sunken rounded-card border border-surface-line text-[13px] space-y-1">
+              <div className="font-bold text-ink-900 text-sm">
                 {selectedAddress?.title || 'Home'} Address
               </div>
-              <p className="text-slate-600 leading-relaxed">
+              <p className="text-ink-600 leading-relaxed">
                 {selectedAddress
                   ? `${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.zipCode}`
                   : '123 Main Street, Apt 4B, Springfield, IL 62701'}
               </p>
-              <p className="text-slate-500 font-medium pt-1">
+              <p className="text-ink-500 font-medium pt-1">
                 Contact: {user?.phone || '+1 (555) 234-5678'}
               </p>
             </div>
           </div>
 
           {/* Payment Method & Stripe Card Simulator */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-orange-600" /> Payment Options
+          <div className="bg-white rounded-panel p-6 border border-surface-line/80 shadow-card space-y-5">
+            <div className="flex items-center justify-between border-b border-surface-line pb-3">
+              <h3 className="text-base font-bold text-ink-900 flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-brand-600" /> Payment Options
               </h3>
-              <span className="text-xs text-slate-400">Powered by Stripe</span>
+              <span className="text-[13px] text-ink-400">Powered by Stripe</span>
             </div>
 
             {/*
@@ -242,13 +242,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
                     </span>
                     <span className="min-w-0">
                       <span
-                        className={`block text-xs font-black tracking-tight ${
+                        className={`block text-[13px] font-bold tracking-tight ${
                           selected ? 'text-brand-700' : 'text-ink-900'
                         }`}
                       >
                         {title}
                       </span>
-                      <span className="mt-0.5 block text-[11px] font-semibold leading-tight text-ink-500">
+                      <span className="mt-0.5 block text-[13px] font-semibold leading-tight text-ink-500">
                         {blurb}
                       </span>
                     </span>
@@ -269,7 +269,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
               {errorMsg && (
                 <div
                   role="alert"
-                  className="rounded-control border border-danger-500/25 bg-danger-50 p-3 text-xs font-bold text-danger-600"
+                  className="rounded-control border border-danger-500/25 bg-danger-50 p-3 text-[13px] font-bold text-danger-600"
                 >
                   {errorMsg}
                 </div>
@@ -277,7 +277,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
 
               {paymentMethod === 'cod' ? (
                 <>
-                  <p className="rounded-card border border-surface-line bg-surface-sunken/60 p-3.5 text-[11px] font-semibold leading-relaxed text-ink-600">
+                  <p className="rounded-card border border-surface-line bg-surface-sunken/60 p-3.5 text-[13px] font-semibold leading-relaxed text-ink-600">
                     Please have ₹{finalTotal} ready for the driver. Payment is marked pending until
                     delivery is completed.
                   </p>
@@ -311,8 +311,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
                 <>
                   <div className="rounded-card border border-surface-line bg-surface-sunken/60 p-3.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-ink-500">Amount payable</span>
-                      <span className="text-sm font-black tracking-tight text-ink-900">
+                      <span className="text-[13px] font-semibold text-ink-500">Amount payable</span>
+                      <span className="text-sm font-bold tracking-tight text-ink-900">
                         ₹{finalTotal}
                       </span>
                     </div>
@@ -333,7 +333,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
                       : `Pay ₹${finalTotal} & Place Order`}
                   </Button>
 
-                  <p className="text-center text-[11px] font-medium text-ink-400">
+                  <p className="text-center text-[13px] font-medium text-ink-400">
                     Demo mode — no real money moves and no card is charged.
                   </p>
                 </>
@@ -346,24 +346,24 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
 
         {/* Right Side: Order Summary */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
-            <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3">
+          <div className="bg-white rounded-panel p-6 border border-surface-line/80 shadow-card space-y-4">
+            <h3 className="text-base font-bold text-ink-900 border-b border-surface-line pb-3">
               Order Items ({items.length})
             </h3>
 
             <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
               {items.map((item) => (
-                <div key={item.cartItemId} className="flex gap-3 items-center text-xs">
+                <div key={item.cartItemId} className="flex gap-3 items-center text-[13px]">
                   <img
                     src={item.foodItem.image}
                     alt={item.foodItem.name}
-                    className="w-12 h-12 rounded-xl object-cover shrink-0"
+                    className="w-12 h-12 rounded-control object-cover shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-slate-900 truncate">{item.foodItem.name}</h4>
-                    <span className="text-slate-500">Qty: {item.quantity}</span>
+                    <h4 className="font-bold text-ink-900 truncate">{item.foodItem.name}</h4>
+                    <span className="text-ink-500">Qty: {item.quantity}</span>
                   </div>
-                  <span className="font-extrabold text-slate-900">
+                  <span className="font-semibold text-ink-900">
                     ₹{item.itemTotalPrice * item.quantity}
                   </span>
                 </div>
@@ -371,18 +371,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
             </div>
 
             {/* Price Breakdown */}
-            <div className="pt-3 border-t border-slate-200 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-600">
+            <div className="pt-3 border-t border-surface-line space-y-2 text-[13px]">
+              <div className="flex justify-between text-ink-600">
                 <span>Items Subtotal</span>
                 <span>₹{itemTotal}</span>
               </div>
 
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-ink-600">
                 <span>Delivery Fee</span>
                 <span>₹{deliveryFee}</span>
               </div>
 
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-ink-600">
                 <span>Taxes & Service</span>
                 <span>₹{taxAndPackaging}</span>
               </div>
@@ -394,9 +394,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
                 </div>
               )}
 
-              <div className="pt-3 border-t border-slate-200 flex justify-between items-center text-base font-black text-slate-900">
+              <div className="pt-3 border-t border-surface-line flex justify-between items-center text-base font-bold text-ink-900">
                 <span>Final Payable</span>
-                <span className="text-orange-600">₹{finalTotal}</span>
+                <span className="text-brand-600">₹{finalTotal}</span>
               </div>
             </div>
 
